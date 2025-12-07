@@ -8,7 +8,6 @@ import {
   AppBar,
   Toolbar,
   Typography,
-  Button,
   Tabs,
   Tab
 } from '@mui/material';
@@ -21,11 +20,8 @@ import UpdatesChart from './components/UpdatesChart';
 import PriceHistory from './components/PriceHistory';
 import MarketplaceView from './components/MarketplaceView';
 import SearchView from './components/SearchView';
-import Login from './components/Login';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
 
-function AuthenticatedApp() {
-  const { logout } = useAuth();
+function MainApp() {
   const [currentTab, setCurrentTab] = useState(0);
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
@@ -45,8 +41,6 @@ function AuthenticatedApp() {
             <Tab icon={<StoreIcon />} iconPosition="start" label="Marketplace" />
             <Tab icon={<SearchIcon />} iconPosition="start" label="Search" />
           </Tabs>
-
-          <Button color="inherit" onClick={logout}>Logout</Button>
         </Toolbar>
       </AppBar>
 
@@ -89,19 +83,9 @@ function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <AuthProvider>
-        <AuthWrapper />
-      </AuthProvider>
+      <MainApp />
     </ThemeProvider>
   );
-}
-
-function AuthWrapper() {
-  const { isAuthenticated, loading } = useAuth();
-
-  if (loading) return null; // Or a loading spinner
-
-  return isAuthenticated ? <AuthenticatedApp /> : <Login />;
 }
 
 export default App;
