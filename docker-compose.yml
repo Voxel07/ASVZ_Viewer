@@ -1,0 +1,11 @@
+version: '3.8'
+
+services:
+  asvz-viewer:
+    image: registry.gitlab.com/your-username/asvz-viewer:main
+    container_name: asvz-viewer
+    restart: always
+    ports:
+      - "80:80"
+    environment:
+      - VITE_POCKETBASE_URL=https://pb.matzeschneider.de
