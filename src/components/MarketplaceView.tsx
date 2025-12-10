@@ -1,6 +1,6 @@
 import { DataGrid, GridToolbar, type GridColDef, type GridRenderCellParams } from '@mui/x-data-grid';
 import { Box, Paper, Typography, Link, CircularProgress, Alert } from '@mui/material';
-import { useMarketplaceItems } from '../hooks/useData';
+import { useMarketplaceContext } from '../contexts/MarketplaceContext';
 import { format, parseISO } from 'date-fns';
 
 const columns: GridColDef[] = [
@@ -48,25 +48,26 @@ const columns: GridColDef[] = [
 ];
 
 export default function MarketplaceView() {
-    const { data, loading, error } = useMarketplaceItems();
+    const { items: data, loadingInitial: loading, error } = useMarketplaceContext();
 
     return (
-        <Paper sx={{ p: 3, height: '80vh', display: 'flex', flexDirection: 'column' }}>
-            <Typography variant="h6" gutterBottom color="primary">
+        <Paper sx={{ p: 3, display: 'flex', flexDirection: 'column' }}>
+            <Typography variant="h6" color="primary">
                 Marketplace Listings
             </Typography>
 
             {error && <Alert severity="error" sx={{ mb: 2 }}>{error.message}</Alert>}
 
-            <Box sx={{ flexGrow: 1, width: '100%' }}>
+            <Box sx={{ width: '100%' }}>
                 {loading ? (
-                    <Box display="flex" justifyContent="center" alignItems="center" height="100%">
+                    <Box display="flex" justifyContent="center" alignItems="center" sx={{ minHeight: 300 }}>
                         <CircularProgress />
                     </Box>
                 ) : (
                     <DataGrid
                         rows={data}
                         columns={columns}
+                        autoHeight
                         initialState={{
                             pagination: {
                                 paginationModel: { pageSize: 25, page: 0 },

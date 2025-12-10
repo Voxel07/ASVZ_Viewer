@@ -82,7 +82,7 @@ export default function SearchView() {
     ];
 
     return (
-        <Paper sx={{ p: 3, height: '80vh', display: 'flex', flexDirection: 'column' }}>
+        <Paper sx={{ p: 3, display: 'flex', flexDirection: 'column' }}>
             <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
                 <Typography variant="h6" color="primary">
                     Advanced Search
@@ -120,15 +120,16 @@ export default function SearchView() {
 
             {error && <Alert severity="error" sx={{ mb: 2 }}>{error.message}</Alert>}
 
-            <Box sx={{ flexGrow: 1, width: '100%' }}>
+            <Box sx={{ width: '100%' }}>
                 {loading ? (
-                    <Box display="flex" justifyContent="center" alignItems="center" height="100%">
+                    <Box display="flex" justifyContent="center" alignItems="center" sx={{ minHeight: 300 }}>
                         <CircularProgress />
                     </Box>
                 ) : (
                     <DataGrid
                         rows={data}
                         columns={columns}
+                        autoHeight
                         initialState={{
                             pagination: {
                                 paginationModel: { pageSize: 25, page: 0 },
@@ -139,7 +140,7 @@ export default function SearchView() {
                         getRowId={(row) => row.id}
                         slots={{
                             noRowsOverlay: () => (
-                                <Box display="flex" justifyContent="center" alignItems="center" height="100%">
+                                <Box display="flex" justifyContent="center" alignItems="center" sx={{ minHeight: 100 }}>
                                     <Typography color="text.secondary">
                                         {query.length < 3 ? "Type at least 3 characters to search" : "No results found"}
                                     </Typography>

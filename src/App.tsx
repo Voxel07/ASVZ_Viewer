@@ -20,6 +20,8 @@ import UpdatesChart from './components/UpdatesChart';
 import PriceHistory from './components/PriceHistory';
 import MarketplaceView from './components/MarketplaceView';
 import SearchView from './components/SearchView';
+// Marketplace Provider wraps the app to provide global state
+import { MarketplaceProvider } from './contexts/MarketplaceContext';
 
 function MainApp() {
   const [currentTab, setCurrentTab] = useState(0);
@@ -83,7 +85,9 @@ function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <MainApp />
+      <MarketplaceProvider>
+        <MainApp />
+      </MarketplaceProvider>
     </ThemeProvider>
   );
 }
