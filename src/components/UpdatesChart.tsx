@@ -205,7 +205,8 @@ export default function UpdatesChart() {
                                 contentStyle={{ backgroundColor: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8 }}
                                 itemStyle={{ color: '#fff' }}
                                 labelFormatter={(label) => format(parseISO(label), grouping === 'hourly' ? 'dd.MM.yyyy HH:mm' : 'dd.MM.yyyy')}
-                                formatter={(value: number, name: string) => {
+                                formatter={(value: number | undefined, name: any) => {
+                                    if (value === undefined) return ['', name];
                                     if (name === 'total_value') {
                                         return [new Intl.NumberFormat('en-US', { notation: "compact", style: "currency", currency: "EUR" }).format(value), name];
                                     }
