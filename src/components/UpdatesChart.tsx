@@ -40,7 +40,11 @@ const COLORS = {
 };
 
 export default function UpdatesChart() {
-    const [startDate, setStartDate] = useState<string>('2021-10-12T16:49');
+    const [startDate, setStartDate] = useState<string>(() => {
+        const date = new Date();
+        date.setMonth(date.getMonth() - 1);
+        return date.toISOString().slice(0, 16);
+    });
     const [endDate, setEndDate] = useState<string>(new Date().toISOString().slice(0, 16));
     const [selectedFields, setSelectedFields] = useState<string[]>(['added', 'updated', 'deleted']);
     const [grouping, setGrouping] = useState<'hourly' | 'daily'>('daily');
