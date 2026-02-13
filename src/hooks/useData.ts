@@ -163,7 +163,9 @@ export function useMarketplaceItems() {
     return { data, loading, error };
 }
 
-export function useItemSearch(query: string, includeDeleted: boolean) {
+export type SearchField = 'title' | 'id' | 'user' | 'all';
+
+export function useItemSearch(query: string, includeDeleted: boolean, searchField: SearchField = 'title') {
     const [data, setData] = useState<(MarketplaceItem | MarketplaceDeletedItem)[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<Error | null>(null);
@@ -178,9 +180,27 @@ export function useItemSearch(query: string, includeDeleted: boolean) {
             setLoading(true);
             setError(null);
             try {
+                let filterExpression = '';
+
+                switch (searchField) {
+                    case 'title':
+                        filterExpression = `title ~ "${query}"`;
+                        break;
+                    case 'id':
+                        filterExpression = `asvz_id ~ "${query}"`;
+                        break;
+                    case 'user':
+                        filterExpression = `user ~ "${query}"`;
+                        break;
+                    case 'all':
+                    default:
+                        filterExpression = `(title ~ "${query}" || asvz_id ~ "${query}" || user ~ "${query}")`;
+                        break;
+                }
+
                 // Search live items
                 const liveItems = await pb.collection('asvz_marketplace').getFullList<MarketplaceItem>({
-                    filter: `title ~ "${query}"`,
+                    filter: filterExpression,
                     sort: '-created',
                 });
 
@@ -188,7 +208,7 @@ export function useItemSearch(query: string, includeDeleted: boolean) {
 
                 if (includeDeleted) {
                     const deletedItems = await pb.collection('asvz_marketplace_deleted').getFullList<MarketplaceDeletedItem>({
-                        filter: `title ~ "${query}"`,
+                        filter: filterExpression,
                         sort: '-created',
                     });
 
@@ -233,7 +253,7 @@ export function useItemSearch(query: string, includeDeleted: boolean) {
         const timeoutId = setTimeout(search, 500);
         return () => clearTimeout(timeoutId);
 
-    }, [query, includeDeleted]);
+    }, [query, includeDeleted, searchField]);
 
     return { data, loading, error };
 }

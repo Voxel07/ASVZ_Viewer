@@ -30,10 +30,10 @@ import {
 import { format, parseISO } from 'date-fns';
 import { useUpdatesData } from '../hooks/useData';
 
-const AVAILABLE_FIELDS = ['added', 'updated_count', 'deleted', 'total_items', 'total_value'];
+const AVAILABLE_FIELDS = ['added', 'updated', 'deleted', 'total_items', 'total_value'];
 const COLORS = {
     added: '#82ca9d',
-    updated_count: '#8884d8',
+    updated: '#8884d8',
     deleted: '#ff8042',
     total_items: '#0088fe',
     total_value: '#ffbb28'
@@ -46,7 +46,7 @@ export default function UpdatesChart() {
         return date.toISOString().slice(0, 16);
     });
     const [endDate, setEndDate] = useState<string>(new Date().toISOString().slice(0, 16));
-    const [selectedFields, setSelectedFields] = useState<string[]>(['added', 'updated_count', 'deleted']);
+    const [selectedFields, setSelectedFields] = useState<string[]>(['added', 'updated', 'deleted']);
     const [grouping, setGrouping] = useState<'hourly' | 'daily'>('daily');
 
     const { data, loading, error } = useUpdatesData(startDate, endDate);
@@ -68,7 +68,7 @@ export default function UpdatesChart() {
             const raw = item as any;
             return {
                 ...item,
-                updated_count: raw.updated_count ?? raw.update ?? 0
+                updated: raw.updated ?? raw.update ?? 0
             };
         });
 
@@ -82,7 +82,7 @@ export default function UpdatesChart() {
                 acc[day] = {
                     timestamp: day,
                     added: 0,
-                    updated_count: 0,
+                    updated: 0,
                     deleted: 0,
                     total_items: 0,
                     total_value: 0
@@ -91,7 +91,7 @@ export default function UpdatesChart() {
 
             // Sum deltas
             acc[day].added += curr.added || 0;
-            acc[day].updated_count += curr.updated_count || 0;
+            acc[day].updated += curr.updated || 0;
             acc[day].deleted += curr.deleted || 0;
 
             // For totals, take the last available value for the day (snapshot)

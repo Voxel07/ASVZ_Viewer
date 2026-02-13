@@ -1,18 +1,57 @@
 import { useState } from 'react';
 import { DataGrid, type GridColDef, type GridRenderCellParams } from '@mui/x-data-grid';
-import { Box, Paper, Typography, Link, CircularProgress, Alert, TextField, InputAdornment, FormControlLabel, Switch, Chip } from '@mui/material';
+import { Box, Paper, Typography, Link, CircularProgress, Alert, TextField, InputAdornment, FormControlLabel, Switch, Chip, IconButton, Tooltip, Select, MenuItem, FormControl, InputLabel } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
-import { useItemSearch } from '../hooks/useData';
+import TimelineIcon from '@mui/icons-material/Timeline';
+import { useItemSearch, type SearchField } from '../hooks/useData';
 import { format, parseISO } from 'date-fns';
 import type { MarketplaceDeletedItem } from '../types';
+import ItemHistoryDialog from './ItemHistoryDialog';
 
 export default function SearchView() {
     const [query, setQuery] = useState('');
     const [includeDeleted, setIncludeDeleted] = useState(false);
+    const [searchField, setSearchField] = useState<SearchField>('title');
+    const [selectedItem, setSelectedItem] = useState<{ id: string; title: string } | null>(null);
 
-    const { data, loading, error } = useItemSearch(query, includeDeleted);
+    const { data, loading, error } = useItemSearch(query, includeDeleted, searchField);
+
+    const handleOpenHistory = (id: string, title: string) => {
+        setSelectedItem({ id, title });
+    };
+
+    const handleCloseHistory = () => {
+        setSelectedItem(null);
+    };
 
     const columns: GridColDef[] = [
+        {
+            field: 'actions',
+            headerName: '',
+            width: 50,
+            sortable: false,
+            filterable: false,
+            renderCell: (params: GridRenderCellParams) => {
+                // Only show history button if updated date differs from created date (timestamp)
+                const hasUpdates = params.row.updated && params.row.updated !== params.row.timestamp;
+
+                if (!hasUpdates) return null;
+
+                return (
+                    <Tooltip title="View Price History">
+                        <IconButton
+                            size="small"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                handleOpenHistory(params.row.asvz_id, params.row.title);
+                            }}
+                        >
+                            <TimelineIcon fontSize="small" />
+                        </IconButton>
+                    </Tooltip>
+                );
+            },
+        },
         {
             field: 'asvz_id',
             headerName: 'ID',
@@ -62,7 +101,7 @@ export default function SearchView() {
             headerName: 'Last Available',
             width: 160,
             valueFormatter: (value: string) => {
-                if (!value) return '-';
+                if (!value) return '';
                 try {
                     return format(parseISO(value), 'dd.MM.yyyy HH:mm');
                 } catch (e) {
@@ -89,6 +128,21 @@ export default function SearchView() {
                 </Typography>
 
                 <Box display="flex" alignItems="center" gap={2}>
+                    <FormControl size="small" sx={{ minWidth: 120 }}>
+                        <InputLabel id="search-field-label">Search By</InputLabel>
+                        <Select
+                            labelId="search-field-label"
+                            value={searchField}
+                            label="Search By"
+                            onChange={(e) => setSearchField(e.target.value as SearchField)}
+                        >
+                            <MenuItem value="title">Title</MenuItem>
+                            <MenuItem value="id">ID</MenuItem>
+                            <MenuItem value="user">User</MenuItem>
+                            <MenuItem value="all">All Fields</MenuItem>
+                        </Select>
+                    </FormControl>
+
                     <FormControlLabel
                         control={
                             <Switch
@@ -99,7 +153,7 @@ export default function SearchView() {
                         label="Include Deleted"
                     />
                     <TextField
-                        placeholder="Search items..."
+                        placeholder={`Search items by ${searchField === 'all' ? 'Title, ID, or User' : searchField.charAt(0).toUpperCase() + searchField.slice(1)}...`}
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
                         slotProps={{
@@ -156,6 +210,15 @@ export default function SearchView() {
                     />
                 )}
             </Box>
+
+            {selectedItem && (
+                <ItemHistoryDialog
+                    open={!!selectedItem}
+                    onClose={handleCloseHistory}
+                    asvzId={selectedItem.id}
+                    title={selectedItem.title}
+                />
+            )}
         </Paper>
     );
 }

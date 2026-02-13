@@ -17,7 +17,6 @@ import SearchIcon from '@mui/icons-material/Search';
 
 import theme from './theme';
 import UpdatesChart from './components/UpdatesChart';
-import PriceHistory from './components/PriceHistory';
 import MarketplaceView from './components/MarketplaceView';
 import SearchView from './components/SearchView';
 // Marketplace Provider wraps the app to provide global state
@@ -54,9 +53,6 @@ function MainApp() {
               <Grid container spacing={3} justifyContent="center">
                 <Grid size={{ xs: 12 }}>
                   <UpdatesChart />
-                </Grid>
-                <Grid size={{ xs: 12 }}>
-                  <PriceHistory />
                 </Grid>
               </Grid>
             )}
