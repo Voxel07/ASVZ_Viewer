@@ -1,7 +1,7 @@
 export interface ASVZUpdate {
     id: string;
     added: number;
-    updated: number;
+    updated_count: number;
     deleted: number;
     timestamp: string; // ISO date string
     total_items: number;
