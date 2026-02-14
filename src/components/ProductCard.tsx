@@ -3,7 +3,7 @@ import TimelineIcon from '@mui/icons-material/Timeline';
 import { format, parseISO } from 'date-fns';
 import { pb } from '../lib/pb';
 import type { MarketplaceItem } from '../types';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface ProductCardProps {
     item: MarketplaceItem;
@@ -15,7 +15,34 @@ export default function ProductCard({ item, onHistoryClick }: ProductCardProps) 
     const hasUpdates = item.updated && item.updated !== item.timestamp;
     const [imgError, setImgError] = useState(false);
 
-    const imageUrl = `${pb.baseUrl}/api/files/asvz_images/${item.asvz_id}/${item.asvz_id}.jpg`;
+    const [imageUrl, setImageUrl] = useState<string | null>(null);
+
+    useEffect(() => {
+        let isMounted = true;
+        async function fetchImage() {
+            try {
+                // We need to find the record in asvz_images that corresponds to this item
+                // The user stated the filename is the same as the item id (asvz_id)
+                // We filter by asvz_id to find the record.
+                const record = await pb.collection('asvz_images').getFirstListItem(`asvz_id="${item.asvz_id}"`);
+
+                if (isMounted && record) {
+                    // Start with the filename we expect (asvz_id + .jpg) or utilize the one from the record if possible
+                    // However, we can use the PB SDK to generate the URL which is safer
+                    // If record.img is the filename, this works.
+                    const url = pb.files.getUrl(record, record.img || `${item.asvz_id}.jpg`);
+                    setImageUrl(url);
+                }
+            } catch (e) {
+                // If 404 or other error, imageUrl remains null
+                // console.error("Failed to fetch image for", item.asvz_id, e);
+                if (isMounted) setImgError(true);
+            }
+        }
+
+        fetchImage();
+        return () => { isMounted = false; };
+    }, [item.asvz_id]);
 
     return (
         <Card sx={{
@@ -28,7 +55,7 @@ export default function ProductCard({ item, onHistoryClick }: ProductCardProps) 
             }
         }}>
             <Box sx={{ position: 'relative', pt: '56.25%', bgcolor: 'grey.100' }}>
-                {!imgError ? (
+                {imageUrl && !imgError ? (
                     <CardMedia
                         component="img"
                         image={imageUrl}
@@ -39,8 +66,7 @@ export default function ProductCard({ item, onHistoryClick }: ProductCardProps) 
                             left: 0,
                             width: '100%',
                             height: '100%',
-                            objectFit: 'contain',
-                            p: 1
+                            objectFit: 'cover',
                         }}
                         onError={() => setImgError(true)}
                     />
