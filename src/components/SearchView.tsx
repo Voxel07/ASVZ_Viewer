@@ -1,9 +1,13 @@
 import { useState } from 'react';
 import { DataGrid, type GridColDef, type GridRenderCellParams } from '@mui/x-data-grid';
-import { Box, Paper, Typography, Link, CircularProgress, Alert, TextField, InputAdornment, FormControlLabel, Switch, Chip, IconButton, Tooltip, Select, MenuItem, FormControl, InputLabel } from '@mui/material';
+import { Box, Paper, Typography, Link, CircularProgress, Alert, TextField, InputAdornment, FormControlLabel, Switch, Chip, IconButton, Tooltip, Select, MenuItem, FormControl, InputLabel, ToggleButton, ToggleButtonGroup, Grid, Pagination } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import TimelineIcon from '@mui/icons-material/Timeline';
+import ViewListIcon from '@mui/icons-material/ViewList';
+import ViewModuleIcon from '@mui/icons-material/ViewModule';
 import { useItemSearch, type SearchField } from '../hooks/useData';
+import ProductCard from './ProductCard';
+import type { MarketplaceItem } from '../types';
 import { format, parseISO } from 'date-fns';
 import type { MarketplaceDeletedItem } from '../types';
 import ItemHistoryDialog from './ItemHistoryDialog';
@@ -12,6 +16,9 @@ export default function SearchView() {
     const [query, setQuery] = useState('');
     const [includeDeleted, setIncludeDeleted] = useState(false);
     const [searchField, setSearchField] = useState<SearchField>('title');
+    const [viewMode, setViewMode] = useState<'list' | 'details'>('list');
+    const [page, setPage] = useState(1);
+    const ITEMS_PER_PAGE = 24;
     const [selectedItem, setSelectedItem] = useState<{ id: string; title: string } | null>(null);
 
     const { data, loading, error } = useItemSearch(query, includeDeleted, searchField);
@@ -128,6 +135,23 @@ export default function SearchView() {
                 </Typography>
 
                 <Box display="flex" alignItems="center" gap={2}>
+                    <ToggleButtonGroup
+                        value={viewMode}
+                        exclusive
+                        onChange={(_e, newMode) => {
+                            if (newMode !== null) setViewMode(newMode);
+                        }}
+                        aria-label="view mode"
+                        size="small"
+                    >
+                        <ToggleButton value="list" aria-label="list view">
+                            <ViewListIcon />
+                        </ToggleButton>
+                        <ToggleButton value="details" aria-label="details view">
+                            <ViewModuleIcon />
+                        </ToggleButton>
+                    </ToggleButtonGroup>
+
                     <FormControl size="small" sx={{ minWidth: 120 }}>
                         <InputLabel id="search-field-label">Search By</InputLabel>
                         <Select
@@ -179,7 +203,7 @@ export default function SearchView() {
                     <Box display="flex" justifyContent="center" alignItems="center" sx={{ minHeight: 300 }}>
                         <CircularProgress />
                     </Box>
-                ) : (
+                ) : viewMode === 'list' ? (
                     <DataGrid
                         rows={data}
                         columns={columns}
@@ -208,6 +232,41 @@ export default function SearchView() {
                             },
                         }}
                     />
+                ) : (
+                    <Box>
+                        {data.length === 0 ? (
+                            <Box display="flex" justifyContent="center" alignItems="center" sx={{ minHeight: 100 }}>
+                                <Typography color="text.secondary">
+                                    {query.length < 3 ? "Type at least 3 characters to search" : "No results found"}
+                                </Typography>
+                            </Box>
+                        ) : (
+                            <>
+                                <Grid container spacing={2}>
+                                    {data
+                                        .slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE)
+                                        .map((item) => (
+                                            <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={item.id}>
+                                                <ProductCard
+                                                    item={item as MarketplaceItem}
+                                                    onHistoryClick={handleOpenHistory}
+                                                />
+                                            </Grid>
+                                        ))}
+                                </Grid>
+                                {data.length > ITEMS_PER_PAGE && (
+                                    <Box display="flex" justifyContent="center" mt={3}>
+                                        <Pagination
+                                            count={Math.ceil(data.length / ITEMS_PER_PAGE)}
+                                            page={page}
+                                            onChange={(_e, p) => setPage(p)}
+                                            color="primary"
+                                        />
+                                    </Box>
+                                )}
+                            </>
+                        )}
+                    </Box>
                 )}
             </Box>
 
