@@ -214,12 +214,12 @@ export function useItemSearch(query: string, includeDeleted: boolean, searchFiel
 
                     // Mark as deleted and ensure fields are present for UI
                     const mappedDeleted = deletedItems.map(item => {
-                        const delTime = item.removeTime || item.updated || item.timestamp;
+                        const delTime = item.removeTime || item.updated || item.addTime;
 
                         let duration = '-';
-                        if (item.removeTime && item.timestamp) {
+                        if (item.removeTime && item.addTime) {
                             try {
-                                duration = formatDistanceStrict(new Date(item.timestamp), new Date(item.removeTime));
+                                duration = formatDistanceStrict(new Date(item.addTime), new Date(item.removeTime));
                             } catch (e) {
                                 console.error("Error calculating duration", e);
                             }

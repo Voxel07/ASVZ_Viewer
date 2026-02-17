@@ -12,7 +12,7 @@ interface ProductCardProps {
 
 export default function ProductCard({ item, onHistoryClick }: ProductCardProps) {
     const isDeleted = (item as any)._isDeleted;
-    const hasUpdates = item.updated && item.updated !== item.timestamp;
+    const hasUpdates = item.updated && item.updated !== item.addTime;
     const [imgError, setImgError] = useState(false);
 
     const [imageUrl, setImageUrl] = useState<string | null>(null);
@@ -148,7 +148,7 @@ export default function ProductCard({ item, onHistoryClick }: ProductCardProps) 
                 )}
 
                 <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
-                    {item.timestamp ? format(parseISO(item.timestamp), 'dd.MM.yyyy') : '-'}
+                    {item.addTime ? format(parseISO(item.addTime), 'dd.MM.yyyy') : '-'}
                 </Typography>
             </CardContent>
         </Card>
