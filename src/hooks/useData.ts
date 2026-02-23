@@ -163,15 +163,24 @@ export function useMarketplaceItems() {
     return { data, loading, error };
 }
 
-export type SearchField = 'title' | 'id' | 'user' | 'all';
+export interface SearchQuery {
+    title?: string;
+    user?: string;
+    id?: string;
+}
 
-export function useItemSearch(query: string, includeDeleted: boolean, searchField: SearchField = 'title') {
+export function useItemSearch(query: SearchQuery, includeDeleted: boolean) {
     const [data, setData] = useState<(MarketplaceItem | MarketplaceDeletedItem)[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<Error | null>(null);
 
     useEffect(() => {
-        if (!query || query.length < 3) {
+        // If all fields are empty or too short, clear data
+        const hasValidTitle = query.title && query.title.length >= 3;
+        const hasValidUser = query.user && query.user.length >= 3;
+        const hasValidId = query.id && query.id.length >= 3;
+
+        if (!hasValidTitle && !hasValidUser && !hasValidId) {
             setData([]);
             return;
         }
@@ -182,44 +191,42 @@ export function useItemSearch(query: string, includeDeleted: boolean, searchFiel
             try {
                 let filterExpression = '';
 
-                switch (searchField) {
-                    case 'title':
-                        filterExpression = `title ~ "${query}"`;
-                        break;
-                    case 'id':
-                        filterExpression = `asvz_id ~ "${query}"`;
-                        break;
-                    case 'user':
-                        filterExpression = `user ~ "${query}"`;
-                        break;
-                    case 'all':
-                    default:
-                        filterExpression = `(title ~ "${query}" || asvz_id ~ "${query}" || user ~ "${query}")`;
-                        break;
+                // If an ID is provided, it overrides everything because it's unique
+                if (query.id && query.id.length >= 3) {
+                    filterExpression = `asvz_id ~ "${query.id}"`;
+                } else {
+                    const conditions: string[] = [];
+                    if (query.title && query.title.length >= 3) {
+                        conditions.push(`title ~ "${query.title}"`);
+                    }
+                    if (query.user && query.user.length >= 3) {
+                        conditions.push(`user ~ "${query.user}"`);
+                    }
+                    filterExpression = conditions.join(' && ');
                 }
 
                 // Search live items
-                const liveItems = await pb.collection('asvz_marketplace').getFullList<MarketplaceItem>({
+                const liveResult = await pb.collection('asvz_marketplace').getList<MarketplaceItem>(1, 1000, {
                     filter: filterExpression,
                     sort: '-created',
                 });
 
-                let allItems: (MarketplaceItem | MarketplaceDeletedItem)[] = [...liveItems];
+                let allItems: (MarketplaceItem | MarketplaceDeletedItem)[] = [...liveResult.items];
 
                 if (includeDeleted) {
-                    const deletedItems = await pb.collection('asvz_marketplace_deleted').getFullList<MarketplaceDeletedItem>({
+                    const deletedResult = await pb.collection('asvz_marketplace_deleted').getList<MarketplaceDeletedItem>(1, 1000, {
                         filter: filterExpression,
                         sort: '-created',
                     });
 
                     // Mark as deleted and ensure fields are present for UI
-                    const mappedDeleted = deletedItems.map(item => {
-                        const delTime = item.removeTime || item.updated || item.addTime;
+                    const mappedDeleted = deletedResult.items.map(item => {
+                        const delTime = item.removeTime || item.updated || item.timestamp;
 
                         let duration = '-';
-                        if (item.removeTime && item.addTime) {
+                        if (item.removeTime && item.timestamp) {
                             try {
-                                duration = formatDistanceStrict(new Date(item.addTime), new Date(item.removeTime));
+                                duration = formatDistanceStrict(new Date(item.timestamp), new Date(item.removeTime));
                             } catch (e) {
                                 console.error("Error calculating duration", e);
                             }
@@ -253,7 +260,7 @@ export function useItemSearch(query: string, includeDeleted: boolean, searchFiel
         const timeoutId = setTimeout(search, 500);
         return () => clearTimeout(timeoutId);
 
-    }, [query, includeDeleted, searchField]);
+    }, [query.title, query.user, query.id, includeDeleted]);
 
     return { data, loading, error };
 }

@@ -1,37 +1,62 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { DataGrid, type GridColDef, type GridRenderCellParams } from '@mui/x-data-grid';
-import { Box, Paper, Typography, Link, CircularProgress, Alert, TextField, InputAdornment, FormControlLabel, Switch, Chip, IconButton, Tooltip, Select, MenuItem, FormControl, InputLabel, ToggleButton, ToggleButtonGroup, Grid, Pagination } from '@mui/material';
+import { Box, Paper, Typography, Link, Alert, TextField, InputAdornment, FormControlLabel, Switch, Chip, IconButton, Tooltip, ToggleButton, ToggleButtonGroup, Grid, Pagination, Skeleton } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import TimelineIcon from '@mui/icons-material/Timeline';
 import ViewListIcon from '@mui/icons-material/ViewList';
 import ViewModuleIcon from '@mui/icons-material/ViewModule';
-import { useItemSearch, type SearchField } from '../hooks/useData';
+import { useItemSearch, type SearchQuery } from '../hooks/useData';
 import ProductCard from './ProductCard';
 import type { MarketplaceItem } from '../types';
 import { format, parseISO } from 'date-fns';
 import type { MarketplaceDeletedItem } from '../types';
 import ItemHistoryDialog from './ItemHistoryDialog';
+import { useProductImages } from '../hooks/useProductImages';
 
 export default function SearchView() {
-    const [query, setQuery] = useState('');
+    const [searchQuery, setSearchQuery] = useState<SearchQuery>(() => {
+        const saved = localStorage.getItem('searchQueryObj');
+        return saved ? JSON.parse(saved) : { title: '', user: '', id: '' };
+    });
     const [includeDeleted, setIncludeDeleted] = useState(false);
-    const [searchField, setSearchField] = useState<SearchField>('title');
-    const [viewMode, setViewMode] = useState<'list' | 'details'>('list');
-    const [page, setPage] = useState(1);
+    const [viewMode, setViewMode] = useState<'list' | 'details'>(
+        () => (localStorage.getItem('searchViewMode') as 'list' | 'details') || 'list'
+    );
+    const [page, setPage] = useState(() => {
+        const saved = localStorage.getItem('searchPage');
+        return saved ? parseInt(saved, 10) : 1;
+    });
     const ITEMS_PER_PAGE = 24;
+
+    useEffect(() => {
+        localStorage.setItem('searchPage', page.toString());
+    }, [page]);
+
+    useEffect(() => {
+        localStorage.setItem('searchViewMode', viewMode);
+    }, [viewMode]);
+
+    useEffect(() => {
+        localStorage.setItem('searchQueryObj', JSON.stringify(searchQuery));
+    }, [searchQuery]);
+
     const [selectedItem, setSelectedItem] = useState<{ id: string; title: string } | null>(null);
 
-    const { data, loading, error } = useItemSearch(query, includeDeleted, searchField);
+    const { data, loading, error } = useItemSearch(searchQuery, includeDeleted);
 
-    const handleOpenHistory = (id: string, title: string) => {
+    // NOTE: 'data' from useItemSearch has type (MarketplaceItem | MarketplaceDeletedItem)[] 
+    const currentItems = data.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
+    const { imageUrls, loadingImages } = useProductImages(viewMode === 'details' ? currentItems : []);
+
+    const handleOpenHistory = useCallback((id: string, title: string) => {
         setSelectedItem({ id, title });
-    };
+    }, []);
 
     const handleCloseHistory = () => {
         setSelectedItem(null);
     };
 
-    const columns: GridColDef[] = [
+    const columns: GridColDef[] = useMemo(() => [
         {
             field: 'actions',
             headerName: '',
@@ -125,7 +150,7 @@ export default function SearchView() {
                 return del.duration_online || '-';
             }
         },
-    ];
+    ], [handleOpenHistory]);
 
     return (
         <Paper sx={{ p: 3, display: 'flex', flexDirection: 'column' }}>
@@ -152,21 +177,6 @@ export default function SearchView() {
                         </ToggleButton>
                     </ToggleButtonGroup>
 
-                    <FormControl size="small" sx={{ minWidth: 120 }}>
-                        <InputLabel id="search-field-label">Search By</InputLabel>
-                        <Select
-                            labelId="search-field-label"
-                            value={searchField}
-                            label="Search By"
-                            onChange={(e) => setSearchField(e.target.value as SearchField)}
-                        >
-                            <MenuItem value="title">Title</MenuItem>
-                            <MenuItem value="id">ID</MenuItem>
-                            <MenuItem value="user">User</MenuItem>
-                            <MenuItem value="all">All Fields</MenuItem>
-                        </Select>
-                    </FormControl>
-
                     <FormControlLabel
                         control={
                             <Switch
@@ -176,10 +186,28 @@ export default function SearchView() {
                         }
                         label="Include Deleted"
                     />
+
                     <TextField
-                        placeholder={`Search items by ${searchField === 'all' ? 'Title, ID, or User' : searchField.charAt(0).toUpperCase() + searchField.slice(1)}...`}
-                        value={query}
-                        onChange={(e) => setQuery(e.target.value)}
+                        placeholder="Search by ID"
+                        value={searchQuery.id || ''}
+                        onChange={(e) => setSearchQuery(prev => ({ ...prev, id: e.target.value }))}
+                        variant="outlined"
+                        size="small"
+                        sx={{ width: 150 }}
+                    />
+                    <TextField
+                        placeholder="Search by User"
+                        value={searchQuery.user || ''}
+                        onChange={(e) => setSearchQuery(prev => ({ ...prev, user: e.target.value }))}
+                        variant="outlined"
+                        size="small"
+                        sx={{ width: 200 }}
+                        disabled={!!searchQuery.id && searchQuery.id.length > 0}
+                    />
+                    <TextField
+                        placeholder="Search by Title"
+                        value={searchQuery.title || ''}
+                        onChange={(e) => setSearchQuery(prev => ({ ...prev, title: e.target.value }))}
                         slotProps={{
                             input: {
                                 startAdornment: (
@@ -192,6 +220,7 @@ export default function SearchView() {
                         variant="outlined"
                         size="small"
                         sx={{ width: 300 }}
+                        disabled={!!searchQuery.id && searchQuery.id.length > 0}
                     />
                 </Box>
             </Box>
@@ -200,8 +229,22 @@ export default function SearchView() {
 
             <Box sx={{ width: '100%' }}>
                 {loading ? (
-                    <Box display="flex" justifyContent="center" alignItems="center" sx={{ minHeight: 300 }}>
-                        <CircularProgress />
+                    <Box display="flex" flexDirection="column" gap={2} sx={{ minHeight: 300, mt: 2 }}>
+                        {viewMode === 'list' ? (
+                            <Box>
+                                {[...Array(10)].map((_, i) => (
+                                    <Skeleton key={i} variant="rectangular" height={50} sx={{ mb: 1, borderRadius: 1 }} animation="wave" />
+                                ))}
+                            </Box>
+                        ) : (
+                            <Grid container spacing={2}>
+                                {[...Array(12)].map((_, i) => (
+                                    <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={i}>
+                                        <Skeleton variant="rectangular" height={300} sx={{ borderRadius: 2 }} animation="wave" />
+                                    </Grid>
+                                ))}
+                            </Grid>
+                        )}
                     </Box>
                 ) : viewMode === 'list' ? (
                     <DataGrid
@@ -220,7 +263,7 @@ export default function SearchView() {
                             noRowsOverlay: () => (
                                 <Box display="flex" justifyContent="center" alignItems="center" sx={{ minHeight: 100 }}>
                                     <Typography color="text.secondary">
-                                        {query.length < 3 ? "Type at least 3 characters to search" : "No results found"}
+                                        {!searchQuery.title && !searchQuery.user && !searchQuery.id ? "Enter search criteria (at least 3 characters)" : "No results found"}
                                     </Typography>
                                 </Box>
                             )
@@ -237,22 +280,22 @@ export default function SearchView() {
                         {data.length === 0 ? (
                             <Box display="flex" justifyContent="center" alignItems="center" sx={{ minHeight: 100 }}>
                                 <Typography color="text.secondary">
-                                    {query.length < 3 ? "Type at least 3 characters to search" : "No results found"}
+                                    {!searchQuery.title && !searchQuery.user && !searchQuery.id ? "Enter search criteria (at least 3 characters)" : "No results found"}
                                 </Typography>
                             </Box>
                         ) : (
                             <>
                                 <Grid container spacing={2}>
-                                    {data
-                                        .slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE)
-                                        .map((item) => (
-                                            <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={item.id}>
-                                                <ProductCard
-                                                    item={item as MarketplaceItem}
-                                                    onHistoryClick={handleOpenHistory}
-                                                />
-                                            </Grid>
-                                        ))}
+                                    {currentItems.map((item) => (
+                                        <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={item.id}>
+                                            <ProductCard
+                                                item={item as MarketplaceItem}
+                                                onHistoryClick={handleOpenHistory}
+                                                imageUrl={imageUrls[item.asvz_id]?.url}
+                                                imageLoading={loadingImages && !imageUrls[item.asvz_id]}
+                                            />
+                                        </Grid>
+                                    ))}
                                 </Grid>
                                 {data.length > ITEMS_PER_PAGE && (
                                     <Box display="flex" justifyContent="center" mt={3}>

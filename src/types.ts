@@ -22,7 +22,7 @@ export interface MarketplaceItem {
     title: string;
     price: number;
     user: string;
-    addTime: string; // ISO date string
+    timestamp: string; // ISO date string
     updated: string; // ISO date string
     description?: string;
     url?: string;

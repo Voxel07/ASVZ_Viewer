@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { DataGrid, GridToolbar, type GridColDef, type GridRenderCellParams } from '@mui/x-data-grid';
 import { Box, Paper, Typography, Link, CircularProgress, Alert, IconButton, Tooltip, ToggleButton, ToggleButtonGroup, Grid, Pagination } from '@mui/material';
 import TimelineIcon from '@mui/icons-material/Timeline';
@@ -8,13 +8,30 @@ import { useMarketplaceContext } from '../contexts/MarketplaceContext';
 import { format, parseISO } from 'date-fns';
 import ItemHistoryDialog from './ItemHistoryDialog';
 import ProductCard from './ProductCard';
+import { useProductImages } from '../hooks/useProductImages';
 
 export default function MarketplaceView() {
     const { items: data, loadingInitial: loading, error } = useMarketplaceContext();
     const [selectedItem, setSelectedItem] = useState<{ id: string; title: string } | null>(null);
-    const [viewMode, setViewMode] = useState<'list' | 'details'>('list');
-    const [page, setPage] = useState(1);
+    const [viewMode, setViewMode] = useState<'list' | 'details'>(
+        () => (localStorage.getItem('marketplaceViewMode') as 'list' | 'details') || 'list'
+    );
+    const [page, setPage] = useState(() => {
+        const saved = localStorage.getItem('marketplacePage');
+        return saved ? parseInt(saved, 10) : 1;
+    });
     const ITEMS_PER_PAGE = 24;
+
+    useEffect(() => {
+        localStorage.setItem('marketplacePage', page.toString());
+    }, [page]);
+
+    useEffect(() => {
+        localStorage.setItem('marketplaceViewMode', viewMode);
+    }, [viewMode]);
+
+    const currentItems = data.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
+    const { imageUrls, loadingImages } = useProductImages(viewMode === 'details' ? currentItems : []);
 
     const handleOpenHistory = (id: string, title: string) => {
         setSelectedItem({ id, title });
@@ -168,16 +185,16 @@ export default function MarketplaceView() {
                         ) : (
                             <>
                                 <Grid container spacing={2}>
-                                    {data
-                                        .slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE)
-                                        .map((item) => (
-                                            <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={item.id}>
-                                                <ProductCard
-                                                    item={item}
-                                                    onHistoryClick={handleOpenHistory}
-                                                />
-                                            </Grid>
-                                        ))}
+                                    {currentItems.map((item) => (
+                                        <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={item.id}>
+                                            <ProductCard
+                                                item={item}
+                                                onHistoryClick={handleOpenHistory}
+                                                imageUrl={imageUrls[item.asvz_id]?.url}
+                                                imageLoading={loadingImages && !imageUrls[item.asvz_id]}
+                                            />
+                                        </Grid>
+                                    ))}
                                 </Grid>
                                 {data.length > ITEMS_PER_PAGE && (
                                     <Box display="flex" justifyContent="center" mt={3}>

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   ThemeProvider,
   CssBaseline,
@@ -23,7 +23,14 @@ import SearchView from './components/SearchView';
 import { MarketplaceProvider } from './contexts/MarketplaceContext';
 
 function MainApp() {
-  const [currentTab, setCurrentTab] = useState(0);
+  const [currentTab, setCurrentTab] = useState(() => {
+    const saved = localStorage.getItem('appCurrentTab');
+    return saved ? parseInt(saved, 10) : 0;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('appCurrentTab', currentTab.toString());
+  }, [currentTab]);
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setCurrentTab(newValue);
