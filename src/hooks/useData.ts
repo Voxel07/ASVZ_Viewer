@@ -121,7 +121,10 @@ export function usePriceData(asvzId: string) {
                 setData(records);
             } catch (err) {
                 if (err instanceof Error) {
-                    setError(err);
+                    // Ignore auto-cancellation errors (common in React 18 strict mode double-mounts)
+                    if (err.name !== 'AbortError' && !err.message.includes('autocancelled')) {
+                        setError(err);
+                    }
                 } else {
                     setError(new Error('Unknown error fetching prices'));
                 }

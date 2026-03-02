@@ -46,47 +46,49 @@ export default function ItemPriceChart({ asvzId }: ItemPriceChartProps) {
     }
 
     return (
-        <Box sx={{ height: 250, width: '100%', p: 1 }}>
-            <ResponsiveContainer width="100%" height="100%">
-                <LineChart
-                    data={data}
-                    margin={{
-                        top: 5,
-                        right: 20,
-                        left: 0,
-                        bottom: 5,
-                    }}
-                >
-                    <CartesianGrid strokeDasharray="3 3" opacity={0.1} vertical={false} />
-                    <XAxis
-                        dataKey="timestamp"
-                        tickFormatter={(str) => format(parseISO(str), 'dd.MM')}
-                        stroke="rgba(255,255,255,0.5)"
-                        tick={{ fontSize: 11 }}
-                    />
-                    <YAxis
-                        stroke="rgba(255,255,255,0.5)"
-                        tick={{ fontSize: 11 }}
-                        domain={['auto', 'auto']}
-                        width={40}
-                    />
-                    <Tooltip
-                        contentStyle={{ backgroundColor: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8 }}
-                        itemStyle={{ color: '#fff' }}
-                        labelFormatter={(label) => format(parseISO(label), 'dd.MM.yyyy HH:mm')}
-                        formatter={(value: number | undefined) => [value !== undefined ? `${value} €` : '', 'Price']}
-                    />
-                    <Line
-                        type="stepAfter"
-                        dataKey="price"
-                        stroke="#ec4899"
-                        strokeWidth={2}
-                        dot={{ fill: '#ec4899', r: 3, strokeWidth: 0 }}
-                        activeDot={{ r: 5 }}
-                        animationDuration={1000}
-                    />
-                </LineChart>
-            </ResponsiveContainer>
+        <Box sx={{ p: 1 }}>
+            <Box sx={{ height: 250, width: '100%', position: 'relative', overflow: 'hidden' }}>
+                <ResponsiveContainer width="99%" height={250}>
+                    <LineChart
+                        data={data}
+                        margin={{
+                            top: 5,
+                            right: 20,
+                            left: 0,
+                            bottom: 5,
+                        }}
+                    >
+                        <CartesianGrid strokeDasharray="3 3" opacity={0.1} vertical={false} />
+                        <XAxis
+                            dataKey="timestamp"
+                            tickFormatter={(str) => format(parseISO(str), 'dd.MM')}
+                            stroke="rgba(255,255,255,0.5)"
+                            tick={{ fontSize: 11 }}
+                        />
+                        <YAxis
+                            stroke="rgba(255,255,255,0.5)"
+                            tick={{ fontSize: 11 }}
+                            domain={['auto', 'auto']}
+                            width={40}
+                        />
+                        <Tooltip
+                            contentStyle={{ backgroundColor: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8 }}
+                            itemStyle={{ color: '#fff' }}
+                            labelFormatter={(label) => format(parseISO(label), 'dd.MM.yyyy HH:mm')}
+                            formatter={(value: number | undefined) => [value !== undefined ? `${value} €` : '', 'Price']}
+                        />
+                        <Line
+                            type="stepAfter"
+                            dataKey="price"
+                            stroke="#ec4899"
+                            strokeWidth={2}
+                            dot={{ fill: '#ec4899', r: 3, strokeWidth: 0 }}
+                            activeDot={{ r: 5 }}
+                            animationDuration={1000}
+                        />
+                    </LineChart>
+                </ResponsiveContainer>
+            </Box>
         </Box>
     );
 }

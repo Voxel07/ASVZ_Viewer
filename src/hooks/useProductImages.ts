@@ -34,16 +34,21 @@ export function useProductImages(items: (MarketplaceItem | MarketplaceDeletedIte
     const [imageUrls, setImageUrls] = useState<ImageStore>(globalImageCache);
     const [loading, setLoading] = useState<boolean>(true);
 
+    const stringifiedIds = items.map(i => i.asvz_id).join(',');
+
     useEffect(() => {
         // Find which items actually need fetching (not in cache)
-        const missingIds = items
-            .map(item => item.asvz_id)
-            .filter(id => !globalImageCache[id]);
+        const currentIds = stringifiedIds ? stringifiedIds.split(',') : [];
+        const missingIds = currentIds.filter(id => !globalImageCache[id]);
 
         if (missingIds.length === 0) {
             setLoading(false);
-            // Already cached, just make sure state is up to date
-            setImageUrls({ ...globalImageCache });
+            // Only update if our own state is missing values to avoid unnecessary re-renders
+            setImageUrls(prev => {
+                const needsUpdate = currentIds.some(id => !prev[id]);
+                if (needsUpdate) return { ...globalImageCache };
+                return prev;
+            });
             return;
         }
 
@@ -65,7 +70,7 @@ export function useProductImages(items: (MarketplaceItem | MarketplaceDeletedIte
                 // Map found records
                 for (const record of records) {
                     const id = record.asvz_id;
-                    const url = pb.files.getUrl(record, record.img || `${id}.jpg`);
+                    const url = pb.files.getURL(record, record.img || `${id}.jpg`);
                     newCacheUpdates[id] = { url, error: false };
                 }
 
@@ -106,7 +111,7 @@ export function useProductImages(items: (MarketplaceItem | MarketplaceDeletedIte
         return () => {
             isMounted = false;
         };
-    }, [items]); // Re-run when the items array changes (e.g., page change)
+    }, [stringifiedIds]); // Depend on ID string to prevent loop on new array references
 
     return { imageUrls, loadingImages: loading };
 }
