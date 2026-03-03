@@ -35,3 +35,12 @@ export interface MarketplaceDeletedItem extends MarketplaceItem {
     removeTime: string; // Actual PB field
     _isDeleted?: boolean; // UI Flag
 }
+
+export interface SearchAlert {
+    id: string;
+    title: string;
+    user: string;
+    user_id: string;
+    webhook?: string;
+}
+

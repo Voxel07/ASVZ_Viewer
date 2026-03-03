@@ -3,34 +3,15 @@ import {
     Box,
     Paper,
     Typography,
-    TextField,
     Button,
     Alert,
-    CircularProgress,
     Container
 } from '@mui/material';
 import { pb } from '../lib/pb';
 
 export default function Login() {
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-
-    const handleLogin = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setLoading(true);
-        setError(null);
-
-        try {
-            await pb.collection('users').authWithPassword(email, password);
-        } catch (err: any) {
-            console.error(err);
-            setError('Invalid email or password');
-        } finally {
-            setLoading(false);
-        }
-    };
 
     return (
         <Container component="main" maxWidth="xs">
@@ -59,8 +40,8 @@ export default function Login() {
 
                     {error && <Alert severity="error" sx={{ width: '100%', mb: 2 }}>{error}</Alert>}
 
-                    <Box component="form" onSubmit={handleLogin} sx={{ mt: 1, width: '100%' }}>
-                        <TextField
+                    <Box sx={{ mt: 1, width: '100%' }}>
+                        {/* <TextField
                             margin="normal"
                             required
                             fullWidth
@@ -94,6 +75,40 @@ export default function Login() {
                             disabled={loading}
                         >
                             {loading ? <CircularProgress size={24} color="inherit" /> : 'Sign In'}
+                        </Button> */}
+
+                        {/* <div style={{ display: 'flex', alignItems: 'center', margin: '20px 0' }}>
+                            <div style={{ flex: 1, height: '1px', backgroundColor: 'rgba(255,255,255,0.2)' }} />
+                            <Typography variant="body2" sx={{ mx: 2, color: 'text.secondary' }}>OR</Typography>
+                            <div style={{ flex: 1, height: '1px', backgroundColor: 'rgba(255,255,255,0.2)' }} />
+                        </div> */}
+
+                        <Button
+                            fullWidth
+                            variant="outlined"
+                            sx={{ mt: 1, mb: 2, height: 48, borderColor: 'rgba(255,255,255,0.5)', color: 'white', '&:hover': { borderColor: 'white', backgroundColor: 'rgba(255,255,255,0.1)' } }}
+                            onClick={async () => {
+                                setLoading(true);
+                                try {
+                                    const authData = await pb.collection('users').authWithOAuth2({ provider: 'oidc' });
+
+                                    // Make sure we update the user's name/email from the provider if it's their first time
+                                    if (authData.meta?.isNew || !authData.record.name) {
+                                        await pb.collection('users').update(authData.record.id, {
+                                            name: authData.meta?.name || authData.meta?.username || 'New User',
+                                            // email is usually auto-synced by PB, but can be forced if needed
+                                        });
+                                    }
+                                } catch (err) {
+                                    console.error(err);
+                                    setError('Failed to login with Authentik (OIDC)');
+                                } finally {
+                                    setLoading(false);
+                                }
+                            }}
+                            disabled={loading}
+                        >
+                            Login with Authentik
                         </Button>
                     </Box>
                 </Paper>

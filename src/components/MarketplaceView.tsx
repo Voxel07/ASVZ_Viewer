@@ -127,12 +127,16 @@ export default function MarketplaceView() {
                     aria-label="view mode"
                     size="small"
                 >
-                    <ToggleButton value="list" aria-label="list view">
-                        <ViewListIcon />
-                    </ToggleButton>
-                    <ToggleButton value="details" aria-label="details view">
-                        <ViewModuleIcon />
-                    </ToggleButton>
+                    <Tooltip title="List View">
+                        <ToggleButton value="list" aria-label="list view">
+                            <ViewListIcon />
+                        </ToggleButton>
+                    </Tooltip>
+                    <Tooltip title="Details View">
+                        <ToggleButton value="details" aria-label="details view">
+                            <ViewModuleIcon />
+                        </ToggleButton>
+                    </Tooltip>
                 </ToggleButtonGroup>
             </Box>
 
