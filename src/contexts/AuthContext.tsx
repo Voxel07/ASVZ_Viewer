@@ -13,16 +13,29 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<AuthModel | null>(pb.authStore.model);
+    const [isValid, setIsValid] = useState<boolean>(pb.authStore.isValid);
     const [loading] = useState(false); // Initial load is instant from store
 
     useEffect(() => {
         // Subscribe to auth state changes
         const unsubscribe = pb.authStore.onChange((_token, model) => {
             setUser(model);
+            setIsValid(pb.authStore.isValid);
         });
+
+        // Periodically check token validity (some expirations aren't pushed via onChange)
+        const interval = setInterval(() => {
+            if (!pb.authStore.isValid) {
+                // force clear expired auth so UI updates consistently
+                pb.authStore.clear();
+            } else {
+                setIsValid(true);
+            }
+        }, 30_000);
 
         return () => {
             unsubscribe();
+            clearInterval(interval);
         };
     }, []);
 
@@ -31,7 +44,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     return (
-        <AuthContext.Provider value={{ user, isAuthenticated: !!user, loading, logout }}>
+        <AuthContext.Provider value={{ user, isAuthenticated: isValid, loading, logout }}>
             {children}
         </AuthContext.Provider>
     );
