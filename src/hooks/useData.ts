@@ -209,21 +209,21 @@ export function useItemSearch(query: SearchQuery, includeDeleted: boolean) {
                 }
 
                 // Search live items
-                const liveResult = await pb.collection('asvz_marketplace').getList<MarketplaceItem>(1, 1000, {
+                const liveResult = await pb.collection('asvz_marketplace').getFullList<MarketplaceItem>({
                     filter: filterExpression,
                     sort: '-created',
                 });
 
-                let allItems: (MarketplaceItem | MarketplaceDeletedItem)[] = [...liveResult.items];
+                let allItems: (MarketplaceItem | MarketplaceDeletedItem)[] = [...liveResult];
 
                 if (includeDeleted) {
-                    const deletedResult = await pb.collection('asvz_marketplace_deleted').getList<MarketplaceDeletedItem>(1, 1000, {
+                    const deletedResult = await pb.collection('asvz_marketplace_deleted').getFullList<MarketplaceDeletedItem>({
                         filter: filterExpression,
                         sort: '-created',
                     });
 
                     // Mark as deleted and ensure fields are present for UI
-                    const mappedDeleted = deletedResult.items.map(item => {
+                    const mappedDeleted = deletedResult.map(item => {
                         const delTime = item.removeTime || item.updated || item.timestamp;
 
                         let duration = '-';
