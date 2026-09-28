@@ -25,7 +25,7 @@ export default function ItemPriceChart({ asvzId }: ItemPriceChartProps) {
 
     if (loading) {
         return (
-            <Box display="flex" justifyContent="center" alignItems="center" p={2}>
+            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', p: 2 }}>
                 <CircularProgress size={24} />
             </Box>
         );
@@ -37,7 +37,7 @@ export default function ItemPriceChart({ asvzId }: ItemPriceChartProps) {
 
     if (!data || data.length === 0) {
         return (
-            <Box p={2}>
+            <Box sx={{ p: 2 }}>
                 <Typography variant="body2" color="text.secondary">
                     No price history available.
                 </Typography>
@@ -74,8 +74,8 @@ export default function ItemPriceChart({ asvzId }: ItemPriceChartProps) {
                         <Tooltip
                             contentStyle={{ backgroundColor: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8 }}
                             itemStyle={{ color: '#fff' }}
-                            labelFormatter={(label) => format(parseISO(label), 'dd.MM.yyyy HH:mm')}
-                            formatter={(value: number | undefined) => [value !== undefined ? `${value} €` : '', 'Price']}
+                            labelFormatter={(label) => format(parseISO(String(label)), 'dd.MM.yyyy HH:mm')}
+                            formatter={(value) => [typeof value === 'number' ? `${value} €` : '', 'Price']}
                         />
                         <Line
                             type="stepAfter"

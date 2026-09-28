@@ -295,7 +295,7 @@ export default function SearchView() {
                         boxShadow: 3
                     }}
                 >
-                    <Typography variant="subtitle2" fontWeight="bold" sx={{ mb: 1 }}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1 }}>
                         {formatTooltipLabel(label)}
                     </Typography>
                     {dataPoint.avgPrice !== undefined && (
@@ -536,7 +536,7 @@ export default function SearchView() {
                     Advanced Search
                 </Typography>
 
-                <Box display="flex" alignItems="center" gap={2}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                     <ToggleButtonGroup
                         value={viewMode}
                         exclusive
@@ -615,7 +615,7 @@ export default function SearchView() {
 
             <Box sx={{ width: '100%' }}>
                 {loading ? (
-                    <Box display="flex" flexDirection="column" gap={2} sx={{ minHeight: 300, mt: 2 }}>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, minHeight: 300, mt: 2 }}>
                         {viewMode === 'list' ? (
                             <Box>
                                 {[...Array(10)].map((_, i) => (
@@ -658,7 +658,7 @@ export default function SearchView() {
                         getRowId={(row) => row.id}
                         slots={{
                             noRowsOverlay: () => (
-                                <Box display="flex" justifyContent="center" alignItems="center" sx={{ minHeight: 100 }}>
+                                <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 100 }}>
                                     <Typography color="text.secondary">
                                         {!searchQuery.title && !searchQuery.user && !searchQuery.id ? "Enter search criteria (at least 3 characters)" : "No results found"}
                                     </Typography>
@@ -675,7 +675,7 @@ export default function SearchView() {
                 ) : viewMode === 'details' ? (
                     <Box>
                         {filteredDataByPeriod.length === 0 ? (
-                            <Box display="flex" justifyContent="center" alignItems="center" sx={{ minHeight: 100 }}>
+                            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 100 }}>
                                 <Typography color="text.secondary">
                                     {!searchQuery.title && !searchQuery.user && !searchQuery.id ? "Enter search criteria (at least 3 characters)" : "No results found"}
                                 </Typography>
@@ -695,7 +695,7 @@ export default function SearchView() {
                                     ))}
                                 </Grid>
                                 {filteredDataByPeriod.length > ITEMS_PER_PAGE && (
-                                    <Box display="flex" justifyContent="center" mt={3}>
+                                    <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
                                         <Pagination
                                             count={Math.ceil(filteredDataByPeriod.length / ITEMS_PER_PAGE)}
                                             page={page}
@@ -710,7 +710,7 @@ export default function SearchView() {
                 ) : (
                     <Box>
                         {filteredDataByPeriod.length === 0 ? (
-                            <Box display="flex" justifyContent="center" alignItems="center" sx={{ minHeight: 200 }}>
+                            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 200 }}>
                                 <Typography color="text.secondary">
                                     {!searchQuery.title && !searchQuery.user && !searchQuery.id ? "Enter search criteria (at least 3 characters)" : "No results found"}
                                 </Typography>
@@ -762,30 +762,30 @@ export default function SearchView() {
                                 <Grid container spacing={2} sx={{ mb: 3 }}>
                                     <Grid size={{ xs: 12, sm: 4 }}>
                                         <Paper sx={{ p: 2, display: 'flex', flexDirection: 'column', alignItems: 'center', bgcolor: 'background.paper', borderRadius: 2, border: '1px solid rgba(255,255,255,0.05)' }}>
-                                            <Typography variant="caption" color="text.secondary" fontWeight="medium">
+                                            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 'medium' }}>
                                                 Average Price
                                             </Typography>
-                                            <Typography variant="h5" color="primary.main" fontWeight="bold" sx={{ mt: 0.5 }}>
+                                            <Typography variant="h5" color="primary.main" sx={{ fontWeight: 'bold', mt: 0.5 }}>
                                                 {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(overallStats.avg)}
                                             </Typography>
                                         </Paper>
                                     </Grid>
                                     <Grid size={{ xs: 12, sm: 4 }}>
                                         <Paper sx={{ p: 2, display: 'flex', flexDirection: 'column', alignItems: 'center', bgcolor: 'background.paper', borderRadius: 2, border: '1px solid rgba(255,255,255,0.05)' }}>
-                                            <Typography variant="caption" color="text.secondary" fontWeight="medium">
+                                            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 'medium' }}>
                                                 Total Items Listed
                                             </Typography>
-                                            <Typography variant="h5" color="success.main" fontWeight="bold" sx={{ mt: 0.5 }}>
+                                            <Typography variant="h5" color="success.main" sx={{ fontWeight: 'bold', mt: 0.5 }}>
                                                 {overallStats.count}
                                             </Typography>
                                         </Paper>
                                     </Grid>
                                     <Grid size={{ xs: 12, sm: 4 }}>
                                         <Paper sx={{ p: 2, display: 'flex', flexDirection: 'column', alignItems: 'center', bgcolor: 'background.paper', borderRadius: 2, border: '1px solid rgba(255,255,255,0.05)' }}>
-                                            <Typography variant="caption" color="text.secondary" fontWeight="medium">
+                                            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 'medium' }}>
                                                 Price Range
                                             </Typography>
-                                            <Typography variant="h5" color="warning.main" fontWeight="bold" sx={{ mt: 0.5 }}>
+                                            <Typography variant="h5" color="warning.main" sx={{ fontWeight: 'bold', mt: 0.5 }}>
                                                 {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(overallStats.min)} - {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(overallStats.max)}
                                             </Typography>
                                         </Paper>
@@ -793,7 +793,7 @@ export default function SearchView() {
                                 </Grid>
 
                                 <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
-                                    <Typography variant="subtitle1" fontWeight="medium" color="primary">
+                                    <Typography variant="subtitle1" color="primary" sx={{ fontWeight: 'medium' }}>
                                         Price & Volume Trend Over Time
                                     </Typography>
                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>

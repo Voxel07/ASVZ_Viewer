@@ -144,7 +144,7 @@ export default function MarketplaceView() {
 
             <Box sx={{ width: '100%' }}>
                 {loading ? (
-                    <Box display="flex" justifyContent="center" alignItems="center" sx={{ minHeight: 300 }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 300 }}>
                         <CircularProgress />
                     </Box>
                 ) : viewMode === 'list' ? (
@@ -181,7 +181,7 @@ export default function MarketplaceView() {
                 ) : (
                     <Box>
                         {data.length === 0 ? (
-                            <Box display="flex" justifyContent="center" alignItems="center" sx={{ minHeight: 100 }}>
+                            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 100 }}>
                                 <Typography color="text.secondary">
                                     No items found.
                                 </Typography>
@@ -201,7 +201,7 @@ export default function MarketplaceView() {
                                     ))}
                                 </Grid>
                                 {data.length > ITEMS_PER_PAGE && (
-                                    <Box display="flex" justifyContent="center" mt={3}>
+                                    <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
                                         <Pagination
                                             count={Math.ceil(data.length / ITEMS_PER_PAGE)}
                                             page={page}

@@ -111,7 +111,7 @@ export default function UpdatesChart() {
                 Collection Updates
             </Typography>
 
-            <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{ mb: 4 }} alignItems="center">
+            <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{ mb: 4, alignItems: 'center' }}>
                 <TextField
                     label="Start Date"
                     type="datetime-local"
@@ -161,7 +161,7 @@ export default function UpdatesChart() {
             </Stack>
 
             <Box sx={{ height: 400, width: '100%' }}>
-                {loading && <Box display="flex" justifyContent="center" alignItems="center" height="100%"><CircularProgress /></Box>}
+                {loading && <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}><CircularProgress /></Box>}
                 {error && <Alert severity="error">{error.message}</Alert>}
                 {!loading && !error && chartData.length > 0 && (
                     <ResponsiveContainer width="100%" height="100%">
@@ -204,13 +204,13 @@ export default function UpdatesChart() {
                             <Tooltip
                                 contentStyle={{ backgroundColor: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8 }}
                                 itemStyle={{ color: '#fff' }}
-                                labelFormatter={(label) => format(parseISO(label), grouping === 'hourly' ? 'dd.MM.yyyy HH:mm' : 'dd.MM.yyyy')}
-                                formatter={(value: number | undefined, name: any) => {
-                                    if (value === undefined) return ['', name];
+                                labelFormatter={(label) => format(parseISO(String(label)), grouping === 'hourly' ? 'dd.MM.yyyy HH:mm' : 'dd.MM.yyyy')}
+                                formatter={(value, name) => {
+                                    if (value === undefined) return ['', name ?? ''];
                                     if (name === 'total_value') {
-                                        return [new Intl.NumberFormat('en-US', { notation: "compact", style: "currency", currency: "EUR" }).format(value), name];
+                                        return [new Intl.NumberFormat('en-US', { notation: "compact", style: "currency", currency: "EUR" }).format(Number(value)), name];
                                     }
-                                    return [value, name];
+                                    return [value, name ?? ''];
                                 }}
                             />
                             <Legend />
@@ -274,7 +274,7 @@ function HighscoreTrack({ data, fields }: { data: any[], fields: string[] }) {
     return (
         <Box sx={{ mt: 4 }}>
             <Typography variant="h6" gutterBottom>Highscore Track</Typography>
-            <Stack direction="row" spacing={2} flexWrap="wrap" useFlexGap sx={{ mt: 2 }}>
+            <Stack direction="row" spacing={2} useFlexGap sx={{ flexWrap: 'wrap', mt: 2 }}>
                 {stats.map(stat => {
                     if (!stat) return null;
                     return (
@@ -282,13 +282,13 @@ function HighscoreTrack({ data, fields }: { data: any[], fields: string[] }) {
                             <Typography variant="subtitle2" color="primary" sx={{ textTransform: 'capitalize', mb: 1 }}>{stat.field.replace('_', ' ')}</Typography>
                             <Box sx={{ mb: 1 }}>
                                 <Typography variant="caption" color="text.secondary">Highest</Typography>
-                                <Typography variant="body1" fontWeight="bold" color="success.main">{stat.formatVal(stat.maxVal)}</Typography>
-                                <Typography variant="caption" display="block">{stat.maxDate ? format(parseISO(stat.maxDate), 'dd.MM.yyyy HH:mm') : '-'}</Typography>
+                                <Typography variant="body1" color="success.main" sx={{ fontWeight: 'bold' }}>{stat.formatVal(stat.maxVal)}</Typography>
+                                <Typography variant="caption" sx={{ display: 'block' }}>{stat.maxDate ? format(parseISO(stat.maxDate), 'dd.MM.yyyy HH:mm') : '-'}</Typography>
                             </Box>
                             <Box>
                                 <Typography variant="caption" color="text.secondary">Lowest</Typography>
-                                <Typography variant="body1" fontWeight="bold" color="error.main">{stat.formatVal(stat.minVal)}</Typography>
-                                <Typography variant="caption" display="block">{stat.minDate ? format(parseISO(stat.minDate), 'dd.MM.yyyy HH:mm') : '-'}</Typography>
+                                <Typography variant="body1" color="error.main" sx={{ fontWeight: 'bold' }}>{stat.formatVal(stat.minVal)}</Typography>
+                                <Typography variant="caption" sx={{ display: 'block' }}>{stat.minDate ? format(parseISO(stat.minDate), 'dd.MM.yyyy HH:mm') : '-'}</Typography>
                             </Box>
                         </Paper>
                     );

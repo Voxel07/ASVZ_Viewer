@@ -7,13 +7,17 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
-        manualChunks: {
-          'react-vendor': ['react', 'react-dom', 'framer-motion'],
-          'mui-vendor': ['@mui/material', '@mui/icons-material', '@emotion/react', '@emotion/styled'],
-          'datagrid-vendor': ['@mui/x-data-grid'],
-          'recharts-vendor': ['recharts'],
-          'pocketbase': ['pocketbase'],
-          'utils-vendor': ['date-fns']
+        // Vite 8 uses Rolldown: the object form of `manualChunks` is no longer
+        // supported, so vendor chunking is expressed as code-splitting groups.
+        codeSplitting: {
+          groups: [
+            { name: 'react-vendor', test: /node_modules[\\/](react|react-dom|framer-motion)[\\/]/ },
+            { name: 'datagrid-vendor', test: /node_modules[\\/]@mui[\\/]x-data-grid[\\/]/ },
+            { name: 'mui-vendor', test: /node_modules[\\/](@mui|@emotion)[\\/]/ },
+            { name: 'recharts-vendor', test: /node_modules[\\/]recharts[\\/]/ },
+            { name: 'pocketbase', test: /node_modules[\\/]pocketbase[\\/]/ },
+            { name: 'utils-vendor', test: /node_modules[\\/]date-fns[\\/]/ }
+          ]
         }
       }
     }

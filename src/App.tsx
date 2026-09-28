@@ -86,10 +86,12 @@ function MainApp() {
         onClose={() => setShowLogin(false)}
         maxWidth="xs"
         fullWidth
-        PaperProps={{
-          style: {
-            backgroundColor: 'transparent',
-            boxShadow: 'none',
+        slotProps={{
+          paper: {
+            style: {
+              backgroundColor: 'transparent',
+              boxShadow: 'none',
+            },
           },
         }}
       >
@@ -101,7 +103,7 @@ function MainApp() {
           {/* Tab Panel 0: Dashboard */}
           <div role="tabpanel" hidden={currentTab !== 0}>
             {currentTab === 0 && (
-              <Grid container spacing={3} justifyContent="center">
+              <Grid container spacing={3} sx={{ justifyContent: 'center' }}>
                 <Grid size={{ xs: 12 }}>
                   <UpdatesChart />
                 </Grid>

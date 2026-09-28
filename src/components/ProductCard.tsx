@@ -103,11 +103,11 @@ const ProductCard = React.memo(function ProductCard({ item, onHistoryClick, imag
                     {item.title}
                 </Link>
 
-                <Typography variant="h6" color="secondary.main" fontWeight="bold">
+                <Typography variant="h6" color="secondary.main" sx={{ fontWeight: 'bold' }}>
                     {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'EUR' }).format(item.price)}
                 </Typography>
 
-                <Box display="flex" justifyContent="space-between" alignItems="center">
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <Typography variant="caption" color="text.secondary">
                         ID: {item.asvz_id}
                     </Typography>
