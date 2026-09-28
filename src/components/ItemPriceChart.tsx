@@ -15,6 +15,7 @@ import {
 } from 'recharts';
 import { format, parseISO } from 'date-fns';
 import { usePriceData } from '../hooks/useData';
+import { chartTheme, nb } from '../theme';
 
 interface ItemPriceChartProps {
     asvzId: string;
@@ -58,32 +59,34 @@ export default function ItemPriceChart({ asvzId }: ItemPriceChartProps) {
                             bottom: 5,
                         }}
                     >
-                        <CartesianGrid strokeDasharray="3 3" opacity={0.1} vertical={false} />
+                        <CartesianGrid strokeDasharray="0" stroke={chartTheme.grid} vertical={false} />
                         <XAxis
                             dataKey="timestamp"
                             tickFormatter={(str) => format(parseISO(str), 'dd.MM')}
-                            stroke="rgba(255,255,255,0.5)"
-                            tick={{ fontSize: 11 }}
+                            stroke={chartTheme.axis}
+                            tick={{ fontSize: 11, fill: chartTheme.axis }}
                         />
                         <YAxis
-                            stroke="rgba(255,255,255,0.5)"
-                            tick={{ fontSize: 11 }}
+                            stroke={chartTheme.axis}
+                            tick={{ fontSize: 11, fill: chartTheme.axis }}
                             domain={['auto', 'auto']}
                             width={40}
                         />
                         <Tooltip
-                            contentStyle={{ backgroundColor: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8 }}
-                            itemStyle={{ color: '#fff' }}
+                            contentStyle={chartTheme.tooltip}
+                            itemStyle={chartTheme.tooltipItem}
+                            labelStyle={{ color: nb.muted, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}
+                            cursor={{ stroke: nb.accent, strokeWidth: 1, strokeDasharray: '4 4' }}
                             labelFormatter={(label) => format(parseISO(String(label)), 'dd.MM.yyyy HH:mm')}
                             formatter={(value) => [typeof value === 'number' ? `${value} €` : '', 'Price']}
                         />
                         <Line
                             type="stepAfter"
                             dataKey="price"
-                            stroke="#ec4899"
-                            strokeWidth={2}
-                            dot={{ fill: '#ec4899', r: 3, strokeWidth: 0 }}
-                            activeDot={{ r: 5 }}
+                            stroke={nb.pink}
+                            strokeWidth={3}
+                            dot={{ fill: nb.pink, r: 3, strokeWidth: 0 }}
+                            activeDot={{ r: 6, fill: nb.accent, stroke: nb.black, strokeWidth: 2 }}
                             animationDuration={1000}
                         />
                     </LineChart>

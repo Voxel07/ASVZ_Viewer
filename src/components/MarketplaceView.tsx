@@ -9,6 +9,7 @@ import { format, parseISO } from 'date-fns';
 import ItemHistoryDialog from './ItemHistoryDialog';
 import ProductCard from './ProductCard';
 import { useProductImages } from '../hooks/useProductImages';
+import { dataGridSx } from '../theme';
 
 export default function MarketplaceView() {
     const { items: data, loadingInitial: loading, error } = useMarketplaceContext();
@@ -113,10 +114,13 @@ export default function MarketplaceView() {
 
     return (
         <Paper sx={{ p: 3, display: 'flex', flexDirection: 'column' }}>
-            <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Typography variant="h6" color="primary">
-                    Current Marketplace Listings
-                </Typography>
+            <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
+                <Box>
+                    <Typography variant="h6" color="primary">
+                        Current Marketplace Listings
+                    </Typography>
+                    <Box sx={{ height: 3, width: 56, bgcolor: 'primary.main', mt: 1 }} />
+                </Box>
 
                 <ToggleButtonGroup
                     value={viewMode}
@@ -171,12 +175,7 @@ export default function MarketplaceView() {
                                 showQuickFilter: true,
                             },
                         }}
-                        sx={{
-                            border: 0,
-                            '& .MuiDataGrid-cell:focus-within': {
-                                outline: 'none',
-                            },
-                        }}
+                        sx={dataGridSx}
                     />
                 ) : (
                     <Box>

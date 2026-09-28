@@ -132,8 +132,8 @@ export default function AlertView() {
 
     return (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-            <Paper sx={{ p: 3, background: 'rgba(30, 41, 59, 0.4)', backdropFilter: 'blur(10px)' }}>
-                <Typography variant="h6" sx={{ mb: 2, fontWeight: 'bold' }}>Create New Alert</Typography>
+            <Paper sx={{ p: 3 }}>
+                <Typography variant="h6" color="primary" sx={{ mb: 2 }}>Create New Alert</Typography>
                 <Box component="form" onSubmit={handleCreateAlert} sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
                     <TextField
                         placeholder="Search by Title"
@@ -170,9 +170,9 @@ export default function AlertView() {
                 </Box>
             </Paper>
 
-            <Paper sx={{ p: 3, background: 'rgba(30, 41, 59, 0.4)', backdropFilter: 'blur(10px)' }}>
+            <Paper sx={{ p: 3 }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                    <Typography variant="h6" sx={{ fontWeight: 'bold' }}>Active Alerts</Typography>
+                    <Typography variant="h6" color="primary">Active Alerts</Typography>
                     {selectedAlerts.length > 0 && (
                         <Button variant="outlined" color="error" onClick={handleBulkDelete} disabled={loading}>
                             Delete Selected ({selectedAlerts.length})

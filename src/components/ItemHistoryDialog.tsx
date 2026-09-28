@@ -33,9 +33,7 @@ export default function ItemHistoryDialog({ open, onClose, asvzId, title }: Item
                 <IconButton
                     aria-label="close"
                     onClick={onClose}
-                    sx={{
-                        color: (theme) => theme.palette.grey[500],
-                    }}
+                    sx={{ color: 'text.secondary' }}
                 >
                     <CloseIcon />
                 </IconButton>

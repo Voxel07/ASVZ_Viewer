@@ -26,6 +26,7 @@ import {
     Legend,
     ResponsiveContainer
 } from 'recharts';
+import { dataGridSx, chartTheme, nb } from '../theme';
 
 export default function SearchView() {
     const [searchQuery, setSearchQuery] = useState<SearchQuery>(() => {
@@ -290,12 +291,13 @@ export default function SearchView() {
                     sx={{
                         p: 2,
                         bgcolor: 'background.paper',
-                        border: '1px solid rgba(255, 255, 255, 0.1)',
-                        borderRadius: 2,
-                        boxShadow: 3
+                        border: '2px solid',
+                        borderColor: 'divider',
+                        borderRadius: 0,
+                        boxShadow: '6px 6px 0 0 rgba(0, 0, 0, 0.75)'
                     }}
                 >
-                    <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1 }}>
+                    <Typography variant="subtitle2" sx={{ color: 'primary.main', mb: 1 }}>
                         {formatTooltipLabel(label)}
                     </Typography>
                     {dataPoint.avgPrice !== undefined && (
@@ -532,9 +534,12 @@ export default function SearchView() {
     return (
         <Paper sx={{ p: 3, display: 'flex', flexDirection: 'column' }}>
             <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
-                <Typography variant="h6" color="primary">
-                    Advanced Search
-                </Typography>
+                <Box>
+                    <Typography variant="h6" color="primary">
+                        Advanced Search
+                    </Typography>
+                    <Box sx={{ height: 3, width: 56, bgcolor: 'primary.main', mt: 1 }} />
+                </Box>
 
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                     <ToggleButtonGroup
@@ -619,14 +624,14 @@ export default function SearchView() {
                         {viewMode === 'list' ? (
                             <Box>
                                 {[...Array(10)].map((_, i) => (
-                                    <Skeleton key={i} variant="rectangular" height={50} sx={{ mb: 1, borderRadius: 1 }} animation="wave" />
+                                    <Skeleton key={i} variant="rectangular" height={50} sx={{ mb: 1, borderRadius: 0 }} animation="wave" />
                                 ))}
                             </Box>
                         ) : viewMode === 'details' ? (
                             <Grid container spacing={2}>
                                 {[...Array(12)].map((_, i) => (
                                     <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={i}>
-                                        <Skeleton variant="rectangular" height={300} sx={{ borderRadius: 2 }} animation="wave" />
+                                        <Skeleton variant="rectangular" height={300} sx={{ borderRadius: 0 }} animation="wave" />
                                     </Grid>
                                 ))}
                             </Grid>
@@ -635,11 +640,11 @@ export default function SearchView() {
                                 <Grid container spacing={2} sx={{ mb: 3 }}>
                                     {[...Array(3)].map((_, i) => (
                                         <Grid size={{ xs: 12, sm: 4 }} key={i}>
-                                            <Skeleton variant="rectangular" height={70} sx={{ borderRadius: 2 }} animation="wave" />
+                                            <Skeleton variant="rectangular" height={70} sx={{ borderRadius: 0 }} animation="wave" />
                                         </Grid>
                                     ))}
                                 </Grid>
-                                <Skeleton variant="rectangular" height={400} sx={{ borderRadius: 2 }} animation="wave" />
+                                <Skeleton variant="rectangular" height={400} sx={{ borderRadius: 0 }} animation="wave" />
                             </Box>
                         )}
                     </Box>
@@ -665,12 +670,7 @@ export default function SearchView() {
                                 </Box>
                             )
                         }}
-                        sx={{
-                            border: 0,
-                            '& .MuiDataGrid-cell:focus-within': {
-                                outline: 'none',
-                            },
-                        }}
+                        sx={dataGridSx}
                     />
                 ) : viewMode === 'details' ? (
                     <Box>
@@ -735,9 +735,9 @@ export default function SearchView() {
                                             sx={{
                                                 fontWeight: 'bold',
                                                 bgcolor: 'background.paper',
-                                                borderRadius: 2,
+                                                borderRadius: 0,
                                                 '& .MuiOutlinedInput-notchedOutline': {
-                                                    borderColor: 'rgba(255,255,255,0.05)',
+                                                    borderColor: 'divider',
                                                 },
                                             }}
                                         >
@@ -761,31 +761,31 @@ export default function SearchView() {
 
                                 <Grid container spacing={2} sx={{ mb: 3 }}>
                                     <Grid size={{ xs: 12, sm: 4 }}>
-                                        <Paper sx={{ p: 2, display: 'flex', flexDirection: 'column', alignItems: 'center', bgcolor: 'background.paper', borderRadius: 2, border: '1px solid rgba(255,255,255,0.05)' }}>
-                                            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 'medium' }}>
+                                        <Paper sx={{ p: 2, display: 'flex', flexDirection: 'column', alignItems: 'center', borderTop: `6px solid ${nb.accent}` }}>
+                                            <Typography variant="caption" color="text.secondary">
                                                 Average Price
                                             </Typography>
-                                            <Typography variant="h5" color="primary.main" sx={{ fontWeight: 'bold', mt: 0.5 }}>
+                                            <Typography variant="h5" color="primary.main" sx={{ mt: 0.5 }}>
                                                 {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(overallStats.avg)}
                                             </Typography>
                                         </Paper>
                                     </Grid>
                                     <Grid size={{ xs: 12, sm: 4 }}>
-                                        <Paper sx={{ p: 2, display: 'flex', flexDirection: 'column', alignItems: 'center', bgcolor: 'background.paper', borderRadius: 2, border: '1px solid rgba(255,255,255,0.05)' }}>
-                                            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 'medium' }}>
+                                        <Paper sx={{ p: 2, display: 'flex', flexDirection: 'column', alignItems: 'center', borderTop: `6px solid ${nb.lime}` }}>
+                                            <Typography variant="caption" color="text.secondary">
                                                 Total Items Listed
                                             </Typography>
-                                            <Typography variant="h5" color="success.main" sx={{ fontWeight: 'bold', mt: 0.5 }}>
+                                            <Typography variant="h5" color="success.main" sx={{ mt: 0.5 }}>
                                                 {overallStats.count}
                                             </Typography>
                                         </Paper>
                                     </Grid>
                                     <Grid size={{ xs: 12, sm: 4 }}>
-                                        <Paper sx={{ p: 2, display: 'flex', flexDirection: 'column', alignItems: 'center', bgcolor: 'background.paper', borderRadius: 2, border: '1px solid rgba(255,255,255,0.05)' }}>
-                                            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 'medium' }}>
+                                        <Paper sx={{ p: 2, display: 'flex', flexDirection: 'column', alignItems: 'center', borderTop: `6px solid ${nb.pink}` }}>
+                                            <Typography variant="caption" color="text.secondary">
                                                 Price Range
                                             </Typography>
-                                            <Typography variant="h5" color="warning.main" sx={{ fontWeight: 'bold', mt: 0.5 }}>
+                                            <Typography variant="h5" color="warning.main" sx={{ mt: 0.5 }}>
                                                 {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(overallStats.min)} - {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(overallStats.max)}
                                             </Typography>
                                         </Paper>
@@ -832,36 +832,39 @@ export default function SearchView() {
                                                 left: 20,
                                             }}
                                         >
-                                            <CartesianGrid strokeDasharray="3 3" opacity={0.1} vertical={false} />
+                                            <CartesianGrid strokeDasharray="0" stroke={chartTheme.grid} vertical={false} />
                                             <XAxis
                                                 dataKey="dateStr"
                                                 tickFormatter={formatXAxis}
-                                                stroke="rgba(255,255,255,0.5)"
-                                                tick={{ fontSize: 11 }}
+                                                stroke={chartTheme.axis}
+                                                tick={{ fontSize: 11, fill: chartTheme.axis }}
                                             />
                                             <YAxis
                                                 yAxisId="left"
-                                                stroke="rgba(255,255,255,0.5)"
-                                                tick={{ fontSize: 11 }}
+                                                stroke={chartTheme.axis}
+                                                tick={{ fontSize: 11, fill: chartTheme.axis }}
                                                 tickFormatter={(value) => `${value} €`}
                                             />
                                             <YAxis
                                                 yAxisId="right"
                                                 orientation="right"
-                                                stroke="rgba(255,255,255,0.5)"
-                                                tick={{ fontSize: 11 }}
+                                                stroke={chartTheme.axis}
+                                                tick={{ fontSize: 11, fill: chartTheme.axis }}
                                                 allowDecimals={false}
                                             />
-                                            <RechartsTooltip content={<CustomTooltip />} />
-                                            <Legend />
+                                            <RechartsTooltip
+                                                content={<CustomTooltip />}
+                                                cursor={{ fill: 'rgba(255, 122, 26, 0.08)' }}
+                                            />
+                                            <Legend wrapperStyle={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em' }} />
                                             <Bar
                                                 yAxisId="right"
                                                 dataKey="count"
                                                 name="Items Listed"
-                                                fill="#10b981"
-                                                radius={[4, 4, 0, 0]}
+                                                fill={nb.accent}
+                                                radius={[0, 0, 0, 0]}
                                                 maxBarSize={40}
-                                                opacity={0.6}
+                                                opacity={0.35}
                                                 animationDuration={1000}
                                             />
                                             <Line
@@ -869,10 +872,10 @@ export default function SearchView() {
                                                 type="monotone"
                                                 dataKey="avgPrice"
                                                 name="Average Price"
-                                                stroke="#6366f1"
+                                                stroke={nb.pink}
                                                 strokeWidth={3}
-                                                activeDot={{ r: 8 }}
-                                                dot={{ r: 4, strokeWidth: 2 }}
+                                                activeDot={{ r: 7, fill: nb.accent, stroke: nb.black, strokeWidth: 2 }}
+                                                dot={{ r: 4, strokeWidth: 2, fill: nb.pink, stroke: nb.bg }}
                                                 connectNulls={true}
                                                 animationDuration={1500}
                                             />
@@ -1015,7 +1018,7 @@ function GroupItemsDialog({ open, onClose, groupLabel, items, onHistoryClick }: 
                 <Typography variant="h6" component="div">
                     Listings in {groupLabel} ({items.length} items)
                 </Typography>
-                <IconButton aria-label="close" onClick={onClose} sx={{ color: (theme) => theme.palette.grey[500] }}>
+                <IconButton aria-label="close" onClick={onClose} sx={{ color: 'text.secondary' }}>
                     <CloseIcon />
                 </IconButton>
             </DialogTitle>
@@ -1032,11 +1035,8 @@ function GroupItemsDialog({ open, onClose, groupLabel, items, onHistoryClick }: 
                     }}
                     pageSizeOptions={[25, 50, 100]}
                     sx={{
+                        ...dataGridSx,
                         flexGrow: 1,
-                        border: 0,
-                        '& .MuiDataGrid-cell:focus-within': {
-                            outline: 'none',
-                        },
                     }}
                 />
             </DialogContent>

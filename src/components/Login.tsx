@@ -8,6 +8,7 @@ import {
     Container
 } from '@mui/material';
 import { pb } from '../lib/pb';
+import { nb } from '../theme';
 
 export default function Login() {
     const [loading, setLoading] = useState(false);
@@ -30,13 +31,25 @@ export default function Login() {
                         flexDirection: 'column',
                         alignItems: 'center',
                         width: '100%',
-                        background: 'rgba(30, 41, 59, 0.8)', // Slate 800 with opacity
-                        backdropFilter: 'blur(10px)',
+                        bgcolor: 'background.paper',
+                        border: '2px solid',
+                        borderColor: 'divider',
+                        boxShadow: `10px 10px 0 0 ${nb.accent}`,
                     }}
                 >
-                    <Typography component="h1" variant="h5" sx={{ mb: 3, fontWeight: 700, background: 'linear-gradient(45deg, #6366f1, #ec4899)', backgroundClip: 'text', textFillColor: 'transparent', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                    <Typography
+                        component="h1"
+                        variant="h5"
+                        sx={{
+                            mb: 3,
+                            fontWeight: 900,
+                            color: 'text.primary',
+                        }}
+                    >
                         Welcome Back
                     </Typography>
+
+                    <Box sx={{ width: 56, height: 3, bgcolor: 'primary.main', mb: 3 }} />
 
                     {error && <Alert severity="error" sx={{ width: '100%', mb: 2 }}>{error}</Alert>}
 
@@ -85,8 +98,9 @@ export default function Login() {
 
                         <Button
                             fullWidth
-                            variant="outlined"
-                            sx={{ mt: 1, mb: 2, height: 48, borderColor: 'rgba(255,255,255,0.5)', color: 'white', '&:hover': { borderColor: 'white', backgroundColor: 'rgba(255,255,255,0.1)' } }}
+                            variant="contained"
+                            color="primary"
+                            sx={{ mt: 1, mb: 2, height: 48 }}
                             onClick={async () => {
                                 setLoading(true);
                                 try {

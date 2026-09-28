@@ -29,15 +29,9 @@ import {
 } from 'recharts';
 import { format, parseISO } from 'date-fns';
 import { useUpdatesData } from '../hooks/useData';
+import { chartColors as COLORS, chartTheme, nb } from '../theme';
 
 const AVAILABLE_FIELDS = ['added', 'updated', 'deleted', 'total_items', 'total_value'];
-const COLORS = {
-    added: '#82ca9d',
-    updated: '#8884d8',
-    deleted: '#ff8042',
-    total_items: '#0088fe',
-    total_value: '#ffbb28'
-};
 
 export default function UpdatesChart() {
     const [startDate, setStartDate] = useState<string>(() => {
@@ -111,6 +105,8 @@ export default function UpdatesChart() {
                 Collection Updates
             </Typography>
 
+            <Box sx={{ height: 3, width: 56, bgcolor: 'primary.main', mb: 3 }} />
+
             <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{ mb: 4, alignItems: 'center' }}>
                 <TextField
                     label="Start Date"
@@ -182,28 +178,30 @@ export default function UpdatesChart() {
                                     </linearGradient>
                                 ))}
                             </defs>
-                            <CartesianGrid strokeDasharray="3 3" opacity={0.1} vertical={false} />
+                            <CartesianGrid strokeDasharray="0" stroke={chartTheme.grid} vertical={false} />
                             <XAxis
                                 dataKey="timestamp"
                                 tickFormatter={(str) => format(parseISO(str), 'dd.MM.yy')}
-                                stroke="rgba(255,255,255,0.5)"
-                                tick={{ fontSize: 12 }}
+                                stroke={chartTheme.axis}
+                                tick={{ fontSize: 11, fill: chartTheme.axis }}
                             />
                             <YAxis
                                 yAxisId="left"
-                                stroke="rgba(255,255,255,0.5)"
-                                tick={{ fontSize: 12 }}
+                                stroke={chartTheme.axis}
+                                tick={{ fontSize: 11, fill: chartTheme.axis }}
                             />
                             <YAxis
                                 yAxisId="right"
                                 orientation="right"
-                                stroke="#ffbb28"
-                                tick={{ fontSize: 12 }}
+                                stroke={nb.amber}
+                                tick={{ fontSize: 11, fill: nb.amber }}
                                 tickFormatter={(value) => new Intl.NumberFormat('en-US', { notation: "compact", style: "currency", currency: "EUR", maximumFractionDigits: 1 }).format(value)}
                             />
                             <Tooltip
-                                contentStyle={{ backgroundColor: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8 }}
-                                itemStyle={{ color: '#fff' }}
+                                contentStyle={chartTheme.tooltip}
+                                itemStyle={chartTheme.tooltipItem}
+                                labelStyle={{ color: nb.muted, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}
+                                cursor={{ stroke: nb.accent, strokeWidth: 1, strokeDasharray: '4 4' }}
                                 labelFormatter={(label) => format(parseISO(String(label)), grouping === 'hourly' ? 'dd.MM.yyyy HH:mm' : 'dd.MM.yyyy')}
                                 formatter={(value, name) => {
                                     if (value === undefined) return ['', name ?? ''];
@@ -274,21 +272,24 @@ function HighscoreTrack({ data, fields }: { data: any[], fields: string[] }) {
     return (
         <Box sx={{ mt: 4 }}>
             <Typography variant="h6" gutterBottom>Highscore Track</Typography>
+            <Box sx={{ height: 3, width: 56, bgcolor: 'primary.main', mb: 2 }} />
             <Stack direction="row" spacing={2} useFlexGap sx={{ flexWrap: 'wrap', mt: 2 }}>
                 {stats.map(stat => {
                     if (!stat) return null;
                     return (
-                        <Paper key={stat.field} sx={{ p: 2, minWidth: 200, bgcolor: 'background.paper', border: '1px solid rgba(255,255,255,0.05)' }}>
-                            <Typography variant="subtitle2" color="primary" sx={{ textTransform: 'capitalize', mb: 1 }}>{stat.field.replace('_', ' ')}</Typography>
-                            <Box sx={{ mb: 1 }}>
-                                <Typography variant="caption" color="text.secondary">Highest</Typography>
-                                <Typography variant="body1" color="success.main" sx={{ fontWeight: 'bold' }}>{stat.formatVal(stat.maxVal)}</Typography>
-                                <Typography variant="caption" sx={{ display: 'block' }}>{stat.maxDate ? format(parseISO(stat.maxDate), 'dd.MM.yyyy HH:mm') : '-'}</Typography>
+                        <Paper key={stat.field} sx={{ p: 2, minWidth: 200, borderLeft: `6px solid ${nb.accent}` }}>
+                            <Typography variant="overline" sx={{ color: 'text.secondary', display: 'block', mb: 1 }}>
+                                {stat.field.replace('_', ' ')}
+                            </Typography>
+                            <Box sx={{ mb: 1.5 }}>
+                                <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>Highest</Typography>
+                                <Typography variant="body1" color="success.main" sx={{ fontWeight: 800 }}>{stat.formatVal(stat.maxVal)}</Typography>
+                                <Typography variant="caption" sx={{ display: 'block', textTransform: 'none' }}>{stat.maxDate ? format(parseISO(stat.maxDate), 'dd.MM.yyyy HH:mm') : '-'}</Typography>
                             </Box>
                             <Box>
-                                <Typography variant="caption" color="text.secondary">Lowest</Typography>
-                                <Typography variant="body1" color="error.main" sx={{ fontWeight: 'bold' }}>{stat.formatVal(stat.minVal)}</Typography>
-                                <Typography variant="caption" sx={{ display: 'block' }}>{stat.minDate ? format(parseISO(stat.minDate), 'dd.MM.yyyy HH:mm') : '-'}</Typography>
+                                <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>Lowest</Typography>
+                                <Typography variant="body1" color="error.main" sx={{ fontWeight: 800 }}>{stat.formatVal(stat.minVal)}</Typography>
+                                <Typography variant="caption" sx={{ display: 'block', textTransform: 'none' }}>{stat.minDate ? format(parseISO(stat.minDate), 'dd.MM.yyyy HH:mm') : '-'}</Typography>
                             </Box>
                         </Paper>
                     );

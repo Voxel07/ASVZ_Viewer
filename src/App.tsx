@@ -54,9 +54,32 @@ function MainApp() {
 
   return (
     <Box sx={{ flexGrow: 1, height: '100vh', display: 'flex', flexDirection: 'column' }}>
-      <AppBar position="static" color="transparent" elevation={0} sx={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-        <Toolbar>
-          <Typography variant="h6" component="div" sx={{ flexGrow: 0, mr: 4, fontWeight: 'bold', background: 'linear-gradient(45deg, #6366f1, #ec4899)', backgroundClip: 'text', textFillColor: 'transparent', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+      <AppBar
+        position="static"
+        color="transparent"
+        elevation={0}
+        sx={{
+          bgcolor: 'rgba(15, 15, 15, 0.96)',
+          borderBottom: '2px solid',
+          borderColor: 'divider',
+        }}
+      >
+        <Toolbar sx={{ gap: 2 }}>
+          <Typography
+            variant="h6"
+            component="div"
+            sx={{
+              flexGrow: 0,
+              mr: 2,
+              pl: 1.5,
+              borderLeft: '6px solid',
+              borderColor: 'primary.main',
+              fontWeight: 900,
+              letterSpacing: '0.14em',
+              color: 'text.primary',
+              whiteSpace: 'nowrap',
+            }}
+          >
             ASVZ Analytics
           </Typography>
 
@@ -69,11 +92,11 @@ function MainApp() {
 
           <Box sx={{ flexGrow: 0 }}>
             {isAuthenticated ? (
-              <Button color="inherit" onClick={logout}>
+              <Button variant="outlined" onClick={logout}>
                 Logout
               </Button>
             ) : (
-              <Button color="inherit" onClick={() => setShowLogin(true)}>
+              <Button variant="contained" color="primary" onClick={() => setShowLogin(true)}>
                 Login
               </Button>
             )}
@@ -91,6 +114,7 @@ function MainApp() {
             style: {
               backgroundColor: 'transparent',
               boxShadow: 'none',
+              border: 'none',
             },
           },
         }}
@@ -98,7 +122,7 @@ function MainApp() {
         <Login />
       </Dialog>
 
-      <Box sx={{ flexGrow: 1, overflow: 'auto', py: 4, bgcolor: 'background.default' }}>
+      <Box sx={{ flexGrow: 1, overflow: 'auto', py: 4, bgcolor: 'transparent' }}>
         <Container maxWidth={false} sx={{ width: '90%' }}>
           {/* Tab Panel 0: Dashboard */}
           <div role="tabpanel" hidden={currentTab !== 0}>

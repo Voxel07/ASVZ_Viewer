@@ -21,11 +21,17 @@ const ProductCard = React.memo(function ProductCard({ item, onHistoryClick, imag
             flexDirection: 'column',
             height: '100%',
             position: 'relative',
+            bgcolor: 'background.paper',
+            border: '2px solid',
+            borderColor: 'divider',
             '&:hover': {
-                boxShadow: 6
-            }
+                transform: 'translate(-3px, -3px)',
+                borderColor: 'primary.main',
+                boxShadow: '9px 9px 0 0 #FF7A1A',
+            },
+            '&:hover .nb-card-title': { color: 'primary.main' }
         }}>
-            <Box sx={{ position: 'relative', pt: '56.25%', bgcolor: 'grey.100' }}>
+            <Box sx={{ position: 'relative', pt: '56.25%', bgcolor: '#101010', borderBottom: '2px solid', borderColor: 'divider' }}>
                 {imageLoading ? (
                     <Skeleton variant="rectangular" animation="wave" sx={{
                         position: 'absolute',
@@ -66,7 +72,14 @@ const ProductCard = React.memo(function ProductCard({ item, onHistoryClick, imag
                 )}
 
                 {hasUpdates && (
-                    <Box sx={{ position: 'absolute', top: 8, right: 8, bgcolor: 'background.paper', borderRadius: '50%' }}>
+                    <Box sx={{
+                        position: 'absolute',
+                        top: 0,
+                        right: 0,
+                        bgcolor: 'primary.main',
+                        border: '2px solid',
+                        borderColor: '#0A0A0A'
+                    }}>
                         <Tooltip title="View Price History">
                             <IconButton
                                 size="small"
@@ -74,8 +87,13 @@ const ProductCard = React.memo(function ProductCard({ item, onHistoryClick, imag
                                     e.stopPropagation();
                                     onHistoryClick(item.asvz_id, item.title);
                                 }}
+                                sx={{
+                                    color: '#0A0A0A',
+                                    border: 'none',
+                                    '&:hover': { backgroundColor: '#FF9445', color: '#0A0A0A' }
+                                }}
                             >
-                                <TimelineIcon fontSize="small" color="primary" />
+                                <TimelineIcon fontSize="small" />
                             </IconButton>
                         </Tooltip>
                     </Box>
@@ -90,10 +108,12 @@ const ProductCard = React.memo(function ProductCard({ item, onHistoryClick, imag
                     underline="hover"
                     color="text.primary"
                     variant="subtitle1"
+                    className="nb-card-title"
                     sx={{
-                        fontWeight: 'bold',
-                        lineHeight: 1.2,
+                        fontWeight: 800,
+                        lineHeight: 1.25,
                         mb: 1,
+                        transition: 'color 120ms ease',
                         display: '-webkit-box',
                         WebkitLineClamp: 2,
                         WebkitBoxOrient: 'vertical',
@@ -103,15 +123,15 @@ const ProductCard = React.memo(function ProductCard({ item, onHistoryClick, imag
                     {item.title}
                 </Link>
 
-                <Typography variant="h6" color="secondary.main" sx={{ fontWeight: 'bold' }}>
+                <Typography variant="h6" color="secondary.main" sx={{ fontWeight: 900, letterSpacing: '0.02em' }}>
                     {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'EUR' }).format(item.price)}
                 </Typography>
 
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Typography variant="caption" color="text.secondary">
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1 }}>
+                    <Typography variant="caption" color="text.secondary" noWrap>
                         ID: {item.asvz_id}
                     </Typography>
-                    <Typography variant="caption" color="text.secondary">
+                    <Typography variant="caption" color="text.secondary" noWrap>
                         {item.user}
                     </Typography>
                 </Box>
@@ -122,7 +142,7 @@ const ProductCard = React.memo(function ProductCard({ item, onHistoryClick, imag
                         color="error"
                         size="small"
                         variant="outlined"
-                        sx={{ alignSelf: 'flex-start', mt: 'auto' }}
+                        sx={{ alignSelf: 'flex-start', mt: 'auto', borderRadius: 0 }}
                     />
                 )}
 
