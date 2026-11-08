@@ -1,122 +1,75 @@
 import { useState, useEffect } from 'react';
 import { pb, isRequestAbort } from '../lib/pb';
 import type { MarketplaceItem, MarketplaceDeletedItem } from '../types';
+import { usableImage, IMAGE_MISS_TTL, IMAGE_RETRY_DELAY, type CachedImage } from '../lib/data';
 
-interface ImageStore {
-    [asvz_id: string]: {
-        url: string | null;
-        error: boolean;
-    };
-}
-
-// Global cache so revisiting pages is instant. We initialize it from localStorage.
+type ImageStore = Record<string, CachedImage>;
 const globalImageCache: ImageStore = (() => {
     try {
-        const cached = localStorage.getItem('asvzImagesCache');
-        if (cached) return JSON.parse(cached);
-    } catch (e) {
-        console.warn('Failed to parse cached images from localStorage', e);
-    }
-    return {};
+        const stored: ImageStore = JSON.parse(localStorage.getItem('asvzImagesCache') || '{}');
+        return Object.fromEntries(Object.entries(stored).filter(([, entry]) => entry && typeof entry.url === 'string' && entry.url));
+    } catch { return {}; }
 })();
 
-function persistCacheToStorage() {
+function persistCache() {
     try {
-        localStorage.setItem('asvzImagesCache', JSON.stringify(globalImageCache));
-    } catch (e) {
-        // e.g., QuotaExceededError if cache gets too large. It's safe to ignore,
-        // we'll just fall back to memory caching if full.
-        console.warn('Failed to save image cache to localStorage', e);
-    }
+        localStorage.setItem('asvzImagesCache', JSON.stringify(Object.fromEntries(
+            Object.entries(globalImageCache).filter(([, entry]) => entry.url)
+        )));
+    } catch (err) { console.warn('Failed to save image cache', err); }
 }
 
 export function useProductImages(items: (MarketplaceItem | MarketplaceDeletedItem)[]) {
-    const [imageUrls, setImageUrls] = useState<ImageStore>(globalImageCache);
-    const [loading, setLoading] = useState<boolean>(true);
-
-    const stringifiedIds = items.map(i => i.asvz_id).join(',');
+    const [imageUrls, setImageUrls] = useState<ImageStore>({ ...globalImageCache });
+    const [loading, setLoading] = useState(true);
+    const [retry, setRetry] = useState(0);
+    const idsKey = items.map(item => item.asvz_id).join(',');
 
     useEffect(() => {
-        // Find which items actually need fetching (not in cache)
-        const currentIds = stringifiedIds ? stringifiedIds.split(',') : [];
-        const missingIds = currentIds.filter(id => !globalImageCache[id]);
-
-        if (missingIds.length === 0) {
-            setLoading(false);
-            // Only update if our own state is missing values to avoid unnecessary re-renders
-            setImageUrls(prev => {
-                const needsUpdate = currentIds.some(id => !prev[id]);
-                if (needsUpdate) return { ...globalImageCache };
-                return prev;
-            });
-            return;
-        }
-
-        let isMounted = true;
         const controller = new AbortController();
-        setLoading(true);
-
-        async function fetchMissingImages() {
+        let timer: ReturnType<typeof setTimeout> | undefined;
+        const ids = [...new Set(idsKey ? idsKey.split(',') : [])];
+        const missingIds = ids.filter(id => !usableImage(globalImageCache[id]));
+        for (const id of missingIds) delete globalImageCache[id];
+        async function fetchImages() {
+            // Scheduling state updates with the request also avoids effect cascades.
+            await Promise.resolve();
+            if (controller.signal.aborted) return;
+            setLoading(missingIds.length > 0);
+            let transient: ImageStore = {};
+            let retryDelay = Infinity;
             try {
-                // Batch fetch: e.g., asvz_id="1" || asvz_id="2"
-                // PocketBase allows up to 500 items per page by default, so length ~24 is fine
-                const filterStr = missingIds.map(id => `asvz_id="${id}"`).join(' || ');
-
-                const records = await pb.collection('asvz_images').getFullList({
-                    filter: filterStr,
-                    signal: controller.signal,
-                });
-                if (controller.signal.aborted) return;
-
-                const newCacheUpdates: ImageStore = {};
-
-                // Map found records
-                for (const record of records) {
-                    const id = record.asvz_id;
-                    const url = pb.files.getURL(record, record.img || `${id}.jpg`);
-                    newCacheUpdates[id] = { url, error: false };
-                }
-
-                // Any requested id that wasn't found in records resulted in a miss/error
-                for (const id of missingIds) {
-                    if (!newCacheUpdates[id]) {
-                        newCacheUpdates[id] = { url: null, error: true };
+                if (missingIds.length) {
+                    const records = await pb.collection('asvz_images').getFullList({
+                        filter: missingIds.map(id => pb.filter('asvz_id = {:id}', { id })).join(' || '),
+                        signal: controller.signal,
+                    });
+                    if (controller.signal.aborted) return;
+                    const found: ImageStore = {};
+                    for (const record of records) {
+                        if (record.img) found[String(record.asvz_id)] = { url: pb.files.getURL(record, record.img), error: false };
                     }
-                }
-
-                // Update global cache
-                Object.assign(globalImageCache, newCacheUpdates);
-                persistCacheToStorage();
-
-                if (isMounted) {
-                    setImageUrls({ ...globalImageCache });
+                    for (const id of missingIds) {
+                        globalImageCache[id] = found[id] || { url: null, error: true, expiresAt: Date.now() + IMAGE_MISS_TTL };
+                    }
+                    persistCache();
                 }
             } catch (err) {
                 if (controller.signal.aborted || isRequestAbort(err)) return;
-                // On overall error (like network issue), mark all missings as error
-                const errorUpdates: ImageStore = {};
-                for (const id of missingIds) {
-                    errorUpdates[id] = { url: null, error: true };
-                }
-                Object.assign(globalImageCache, errorUpdates);
-
-                if (isMounted) {
-                    setImageUrls({ ...globalImageCache });
-                }
-            } finally {
-                if (isMounted) {
-                    setLoading(false);
-                }
+                transient = Object.fromEntries(missingIds.map(id => [id, { url: null, error: true }]));
+                retryDelay = IMAGE_RETRY_DELAY;
             }
+            if (controller.signal.aborted) return;
+            setImageUrls({ ...globalImageCache, ...transient });
+            setLoading(false);
+            for (const id of ids) {
+                const entry = globalImageCache[id];
+                if (entry?.expiresAt) retryDelay = Math.min(retryDelay, Math.max(1, entry.expiresAt - Date.now()));
+            }
+            if (Number.isFinite(retryDelay)) timer = setTimeout(() => setRetry(value => value + 1), retryDelay);
         }
-
-        fetchMissingImages();
-
-        return () => {
-            isMounted = false;
-            controller.abort();
-        };
-    }, [stringifiedIds]); // Depend on ID string to prevent loop on new array references
-
+        void fetchImages();
+        return () => { controller.abort(); clearTimeout(timer); };
+    }, [idsKey, retry]);
     return { imageUrls, loadingImages: loading };
 }

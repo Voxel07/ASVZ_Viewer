@@ -29,6 +29,8 @@ import {
 } from 'recharts';
 import { format, parseISO } from 'date-fns';
 import { useUpdatesData } from '../hooks/useData';
+import { dailyUpdates, toLocalInput, type ChartUpdate } from '../lib/data';
+import type { SelectChangeEvent } from '@mui/material';
 import { chartColors as COLORS, chartTheme, nb } from '../theme';
 
 const AVAILABLE_FIELDS = ['added', 'updated', 'deleted', 'total_items', 'total_value'];
@@ -44,9 +46,9 @@ export default function UpdatesChart() {
     const [startDate, setStartDate] = useState<string>(() => {
         const date = new Date();
         date.setMonth(date.getMonth() - 1);
-        return date.toISOString().slice(0, 16);
+        return toLocalInput(date);
     });
-    const [endDate, setEndDate] = useState<string>(new Date().toISOString().slice(0, 16));
+    const [endDate, setEndDate] = useState<string>(toLocalInput(new Date()));
     const [selectedFields, setSelectedFields] = useState<string[]>(['added', 'updated', 'deleted']);
     const [grouping, setGrouping] = useState<'hourly' | 'daily'>('daily');
     const hasChanges = selectedFields.some(field => ['added', 'updated', 'deleted'].includes(field));
@@ -55,7 +57,7 @@ export default function UpdatesChart() {
 
     const { data, loading, error } = useUpdatesData(startDate, endDate);
 
-    const handleFieldChange = (event: any) => {
+    const handleFieldChange = (event: SelectChangeEvent<string[]>) => {
         const {
             target: { value },
         } = event;
@@ -66,47 +68,8 @@ export default function UpdatesChart() {
     const chartData = useMemo(() => {
         if (!data.length) return [];
 
-        // Map raw data to include 'updated' alias to match AVAILABLE_FIELDS
-        // Also handle potential database field name mismatch ('update' vs 'updated')
-        const normalizedData = data.map(item => {
-            const raw = item as any;
-            return {
-                ...item,
-                updated: raw.updated ?? raw.update ?? 0
-            };
-        });
-
-        if (grouping === 'hourly') return normalizedData;
-
-        const groups = normalizedData.reduce((acc, curr) => {
-            // Safer way to get YYYY-MM-DD from ISO string (handles 'T' or ' ' separator)
-            const day = curr.timestamp.substring(0, 10);
-
-            if (!acc[day]) {
-                acc[day] = {
-                    timestamp: day,
-                    added: 0,
-                    updated: 0,
-                    deleted: 0,
-                    total_items: 0,
-                    total_value: 0
-                };
-            }
-
-            // Sum deltas
-            acc[day].added += curr.added || 0;
-            acc[day].updated += curr.updated || 0;
-            acc[day].deleted += curr.deleted || 0;
-
-            // For totals, take the last available value for the day (snapshot)
-            // Assuming data is sorted, which it is from the API
-            acc[day].total_items = curr.total_items;
-            acc[day].total_value = curr.total_value;
-
-            return acc;
-        }, {} as Record<string, any>);
-
-        return Object.values(groups);
+        if (grouping === 'daily') return dailyUpdates(data);
+        return data.map(item => ({ ...item, updated: item.updated ?? item.update ?? 0 }));
     }, [data, grouping]);
 
     return (
@@ -261,7 +224,7 @@ export default function UpdatesChart() {
     );
 }
 
-function HighscoreTrack({ data, fields }: { data: any[], fields: string[] }) {
+function HighscoreTrack({ data, fields }: { data: ChartUpdate[], fields: string[] }) {
     if (!data.length || !fields.length) return null;
 
     const stats = fields.map(field => {
@@ -271,7 +234,7 @@ function HighscoreTrack({ data, fields }: { data: any[], fields: string[] }) {
         let minDate = '';
 
         data.forEach(item => {
-            const val = item[field];
+            const val = item[field as keyof ChartUpdate];
             // Ensure val is a number
             if (typeof val === 'number') {
                 if (val > maxVal) {

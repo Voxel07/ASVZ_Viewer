@@ -6,6 +6,7 @@ export interface ASVZUpdate {
     timestamp: string; // ISO date string
     total_items: number;
     total_value: number;
+    update?: number;
 }
 
 export interface ASVZPrice {
@@ -24,11 +25,19 @@ export interface MarketplaceItem {
     user: string;
     timestamp: string; // ISO date string
     updated: string; // ISO date string
+    _isDeleted?: boolean;
     description?: string;
     url?: string;
 }
 
+export interface MarketplaceDeletedRecord extends Omit<MarketplaceItem, 'timestamp'> {
+    addTime: string;
+    removeTime: string;
+    timestamp?: string;
+}
+
 export interface MarketplaceDeletedItem extends MarketplaceItem {
+    addTime: string;
     deleted_date: string; // ISO date string - Mapped from removeTime
     duration_online?: string; // e.g. "2 days 5 hours" or calculated
     last_available: string; // ISO date

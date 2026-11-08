@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { pb, isRequestAbort } from '../lib/pb';
-import { formatDistanceStrict } from 'date-fns';
-import type { ASVZUpdate, ASVZPrice, MarketplaceItem, MarketplaceDeletedItem } from '../types';
+import { normalizeDeleted, searchFilter } from '../lib/data';
+import type { ASVZUpdate, ASVZPrice, MarketplaceItem, MarketplaceDeletedItem, MarketplaceDeletedRecord } from '../types';
 
 export function useUpdatesData(startDate?: string, endDate?: string) {
     const [data, setData] = useState<ASVZUpdate[]>([]);
@@ -30,7 +30,7 @@ export function useUpdatesData(startDate?: string, endDate?: string) {
 
                 // Fetch all matching records sorted by timestamp
                 const records = await pb.collection('asvz_updates').getFullList<ASVZUpdate>({
-                    sort: 'timestamp',
+                    sort: 'timestamp,created,id',
                     filter: filter,
                     signal: controller.signal,
                 });
@@ -63,13 +63,7 @@ export function usePriceData(asvzId: string) {
     const [error, setError] = useState<Error | null>(null);
 
     useEffect(() => {
-        if (!asvzId) {
-            setData([]);
-            setTitle(null);
-            setLoading(false);
-            setError(null);
-            return;
-        }
+        if (!asvzId) return;
 
         const controller = new AbortController();
 
@@ -79,14 +73,14 @@ export function usePriceData(asvzId: string) {
             try {
                 const records = await pb.collection('asvz_price').getFullList<ASVZPrice>({
                     sort: 'timestamp',
-                    filter: `asvz_id = "${asvzId}"`,
+                    filter: pb.filter('asvz_id = {:id}', { id: asvzId }),
                     signal: controller.signal,
                 });
                 if (controller.signal.aborted) return;
 
                 // Fetch Title and Current/Final Price
                 try {
-                    const product = await pb.collection('asvz_marketplace').getFirstListItem(`asvz_id="${asvzId}"`, { signal: controller.signal });
+                    const product = await pb.collection('asvz_marketplace').getFirstListItem(pb.filter('asvz_id = {:id}', { id: asvzId }), { signal: controller.signal });
                     if (controller.signal.aborted) return;
                     setTitle(product.title);
 
@@ -104,7 +98,7 @@ export function usePriceData(asvzId: string) {
                     if (controller.signal.aborted || isRequestAbort(err)) return;
                     // Try deleted items
                     try {
-                        const deletedProduct = await pb.collection('asvz_marketplace_deleted').getFirstListItem(`asvz_id="${asvzId}"`, { signal: controller.signal });
+                        const deletedProduct = await pb.collection('asvz_marketplace_deleted').getFirstListItem(pb.filter('asvz_id = {:id}', { id: asvzId }), { signal: controller.signal });
                         if (controller.signal.aborted) return;
                         setTitle(deletedProduct.title);
 
@@ -114,7 +108,7 @@ export function usePriceData(asvzId: string) {
                                 id: 'final',
                                 asvz_id: asvzId,
                                 price: deletedProduct.price,
-                                timestamp: deletedProduct.updated || new Date().toISOString(),
+                                timestamp: deletedProduct.removeTime || deletedProduct.updated || new Date().toISOString(),
                                 title: deletedProduct.title
                             });
                         }
@@ -145,7 +139,7 @@ export function usePriceData(asvzId: string) {
         return () => controller.abort();
     }, [asvzId]);
 
-    return { data, title, loading, error };
+    return asvzId ? { data, title, loading, error } : { data: [], title: null, loading: false, error: null };
 }
 
 export function useMarketplaceItems() {
@@ -197,12 +191,7 @@ export function useItemSearch(query: SearchQuery, includeDeleted: boolean) {
         const hasValidUser = query.user && query.user.length >= 3;
         const hasValidId = query.id && query.id.length >= 3;
 
-        if (!hasValidTitle && !hasValidUser && !hasValidId) {
-            setData([]);
-            setLoading(false);
-            setError(null);
-            return;
-        }
+        if (!hasValidTitle && !hasValidUser && !hasValidId) return;
 
         const controller = new AbortController();
 
@@ -210,21 +199,7 @@ export function useItemSearch(query: SearchQuery, includeDeleted: boolean) {
             setLoading(true);
             setError(null);
             try {
-                let filterExpression = '';
-
-                // If an ID is provided, it overrides everything because it's unique
-                if (query.id && query.id.length >= 3) {
-                    filterExpression = `asvz_id ~ "${query.id}"`;
-                } else {
-                    const conditions: string[] = [];
-                    if (query.title && query.title.length >= 3) {
-                        conditions.push(`title ~ "${query.title}"`);
-                    }
-                    if (query.user && query.user.length >= 3) {
-                        conditions.push(`user ~ "${query.user}"`);
-                    }
-                    filterExpression = conditions.join(' && ');
-                }
+                const filterExpression = searchFilter({ title: query.title, user: query.user, id: query.id }, pb.filter.bind(pb));
 
                 // Search live items
                 const liveResult = await pb.collection('asvz_marketplace').getFullList<MarketplaceItem>({
@@ -237,7 +212,7 @@ export function useItemSearch(query: SearchQuery, includeDeleted: boolean) {
                 let allItems: (MarketplaceItem | MarketplaceDeletedItem)[] = [...liveResult];
 
                 if (includeDeleted) {
-                    const deletedResult = await pb.collection('asvz_marketplace_deleted').getFullList<MarketplaceDeletedItem>({
+                    const deletedResult = await pb.collection('asvz_marketplace_deleted').getFullList<MarketplaceDeletedRecord>({
                         filter: filterExpression,
                         sort: '-created',
                         signal: controller.signal,
@@ -245,28 +220,7 @@ export function useItemSearch(query: SearchQuery, includeDeleted: boolean) {
                     if (controller.signal.aborted) return;
 
                     // Mark as deleted and ensure fields are present for UI
-                    const mappedDeleted = deletedResult.map(item => {
-                        const delTime = item.removeTime || item.updated || item.timestamp;
-
-                        let duration = '-';
-                        if (item.removeTime && item.timestamp) {
-                            try {
-                                duration = formatDistanceStrict(new Date(item.timestamp), new Date(item.removeTime));
-                            } catch (e) {
-                                console.error("Error calculating duration", e);
-                            }
-                        }
-
-                        return {
-                            ...item,
-                            // Ensure deleted_date is populated (fallback to updated or created)
-                            deleted_date: delTime,
-                            last_available: delTime, // Map for UI column
-                            duration_online: duration,
-                            // Explicit flag for UI check
-                            _isDeleted: true
-                        };
-                    });
+                    const mappedDeleted = deletedResult.map(normalizeDeleted);
 
                     allItems = [...allItems, ...mappedDeleted];
                 }
@@ -291,5 +245,6 @@ export function useItemSearch(query: SearchQuery, includeDeleted: boolean) {
 
     }, [query.title, query.user, query.id, includeDeleted]);
 
-    return { data, loading, error };
+    const valid = [query.title, query.user, query.id].some(value => value && value.length >= 3);
+    return valid ? { data, loading, error } : { data: [], loading: false, error: null };
 }

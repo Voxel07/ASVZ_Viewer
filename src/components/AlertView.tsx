@@ -8,7 +8,8 @@ import {
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import { pb, isRequestAbort } from '../lib/pb';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/AuthState';
+import { deleteAlerts } from '../lib/data';
 import type { SearchAlert } from '../types';
 
 export default function AlertView() {
@@ -29,7 +30,7 @@ export default function AlertView() {
     const alertsRequest = useRef<AbortController | null>(null);
     const currentUserId = currentUser?.id || currentUser?.record?.id || '';
 
-    const handleSnackbarClose = (_event?: React.SyntheticEvent | Event, reason?: string) => {
+    const handleSnackbarClose = (_event?: React.SyntheticEvent | Event | null, reason?: string) => {
         if (reason === 'clickaway') return;
         setSnackbar({ ...snackbar, open: false });
     };
@@ -43,10 +44,13 @@ export default function AlertView() {
         try {
             const records = await pb.collection('asvz_search_alerts').getFullList<SearchAlert>({
                 sort: '-created',
-                filter: `user_id="${currentUserId}"`,
+                filter: pb.filter('user_id = {:id}', { id: currentUserId }),
                 signal: controller.signal,
             });
-            if (!controller.signal.aborted) setAlerts(records);
+            if (!controller.signal.aborted) {
+                setAlerts(records);
+                setSelectedAlerts(prev => prev.filter(id => records.some(alert => alert.id === id)));
+            }
         } catch (err) {
             if (controller.signal.aborted || isRequestAbort(err)) return;
             console.error("Failed to fetch alerts", err);
@@ -57,8 +61,8 @@ export default function AlertView() {
     }, [isAuthenticated, currentUserId]);
 
     useEffect(() => {
-        fetchAlerts();
-        return () => alertsRequest.current?.abort();
+        const timer = setTimeout(() => void fetchAlerts(), 0);
+        return () => { clearTimeout(timer); alertsRequest.current?.abort(); };
     }, [fetchAlerts]);
 
     const handleCreateAlert = async (e: React.SyntheticEvent) => {
@@ -118,17 +122,17 @@ export default function AlertView() {
         }
     };
 
+    const reconcileDeleted = (id: string) => {
+        setAlerts(prev => prev.filter(alert => alert.id !== id));
+        setSelectedAlerts(prev => prev.filter(selected => selected !== id));
+    };
+
     const handleDeleteConfirm = async () => {
-        try {
-            await pb.collection('asvz_search_alerts').delete(deleteDialog.alertId);
-            setSnackbar({ open: true, message: "Alert deleted.", severity: 'success' });
-            fetchAlerts();
-        } catch (err) {
-            console.error(err);
-            setSnackbar({ open: true, message: "Failed to delete alert.", severity: 'error' });
-        } finally {
-            setDeleteDialog({ open: false, alertId: '' });
-        }
+        alertsRequest.current?.abort();
+        const failed = await deleteAlerts([deleteDialog.alertId], id => pb.collection('asvz_search_alerts').delete(id), reconcileDeleted);
+        setSnackbar({ open: true, message: failed.length ? 'Failed to delete alert.' : 'Alert deleted.', severity: failed.length ? 'error' : 'success' });
+        setDeleteDialog({ open: false, alertId: '' });
+        await fetchAlerts();
     };
 
     const toggleSelectAll = (checked: boolean) => {
@@ -148,19 +152,12 @@ export default function AlertView() {
     };
 
     const handleBulkDelete = async () => {
+        alertsRequest.current?.abort();
         setLoading(true);
-        try {
-            for (const id of selectedAlerts) {
-                await pb.collection('asvz_search_alerts').delete(id);
-            }
-            setSnackbar({ open: true, message: `${selectedAlerts.length} alerts deleted.`, severity: 'success' });
-            setSelectedAlerts([]);
-            fetchAlerts();
-        } catch (err) {
-            console.error(err);
-            setSnackbar({ open: true, message: "Failed to delete some alerts.", severity: 'error' });
-            setLoading(false);
-        }
+        const failed = await deleteAlerts(selectedAlerts, id => pb.collection('asvz_search_alerts').delete(id), reconcileDeleted);
+        setSnackbar({ open: true, message: failed.length ? `Failed to delete ${failed.length} alerts. Retry the remaining selection.` : 'Selected alerts deleted.', severity: failed.length ? 'error' : 'success' });
+        await fetchAlerts();
+        setLoading(false);
     };
 
     if (!isAuthenticated) {

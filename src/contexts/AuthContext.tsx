@@ -1,15 +1,7 @@
-import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import type { AuthModel } from 'pocketbase';
+import { AuthContext } from './AuthState';
+import { useState, useEffect, type ReactNode } from 'react';
 import { pb } from '../lib/pb';
-
-interface AuthContextType {
-    user: AuthModel | null;
-    isAuthenticated: boolean;
-    loading: boolean;
-    logout: () => void;
-}
-
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<AuthModel | null>(pb.authStore.model);
@@ -48,12 +40,4 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             {children}
         </AuthContext.Provider>
     );
-}
-
-export function useAuth() {
-    const context = useContext(AuthContext);
-    if (context === undefined) {
-        throw new Error('useAuth must be used within an AuthProvider');
-    }
-    return context;
 }

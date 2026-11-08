@@ -4,11 +4,12 @@ import { Box, Paper, Typography, Link, CircularProgress, Alert, IconButton, Tool
 import TimelineIcon from '@mui/icons-material/Timeline';
 import ViewListIcon from '@mui/icons-material/ViewList';
 import ViewModuleIcon from '@mui/icons-material/ViewModule';
-import { useMarketplaceContext } from '../contexts/MarketplaceContext';
+import { useMarketplaceContext } from '../contexts/MarketplaceState';
 import { format, parseISO } from 'date-fns';
 import ItemHistoryDialog from './ItemHistoryDialog';
 import ProductCard from './ProductCard';
 import { useProductImages } from '../hooks/useProductImages';
+import { clampPage } from '../lib/data';
 import { dataGridSx } from '../theme';
 
 export default function MarketplaceView() {
@@ -17,11 +18,13 @@ export default function MarketplaceView() {
     const [viewMode, setViewMode] = useState<'list' | 'details'>(
         () => (localStorage.getItem('marketplaceViewMode') as 'list' | 'details') || 'list'
     );
-    const [page, setPage] = useState(() => {
+    const [requestedPage, setPage] = useState(() => {
         const saved = localStorage.getItem('marketplacePage');
         return saved ? parseInt(saved, 10) : 1;
     });
     const ITEMS_PER_PAGE = 24;
+
+    const page = clampPage(requestedPage, data.length, ITEMS_PER_PAGE);
 
     useEffect(() => {
         localStorage.setItem('marketplacePage', page.toString());
@@ -105,7 +108,7 @@ export default function MarketplaceView() {
                 if (!value) return '';
                 try {
                     return format(parseISO(value), 'dd.MM.yyyy HH:mm');
-                } catch (e) {
+                } catch {
                     return value;
                 }
             },

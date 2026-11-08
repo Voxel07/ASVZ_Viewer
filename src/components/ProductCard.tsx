@@ -14,7 +14,7 @@ interface ProductCardProps {
 }
 
 const ProductCard = React.memo(function ProductCard({ item, onHistoryClick, imageUrl, imageLoading }: ProductCardProps) {
-    const isDeleted = (item as any)._isDeleted;
+    const isDeleted = item._isDeleted;
     const hasUpdates = item.updated && item.updated !== item.timestamp;
     const [imgError, setImgError] = useState(false);
 

@@ -1,5 +1,21 @@
 # React + TypeScript + Vite
 
+## Docker
+
+The Dockerfile builds the frontend with Bun and serves the resulting static files
+with nginx; a local `dist` directory is not required.
+
+```sh
+docker build --pull -t asvz-viewer:local .
+docker run --rm -p 8080:80 asvz-viewer:local
+```
+
+To change the PocketBase server, pass
+`--build-arg VITE_POCKETBASE_URL=https://your-pocketbase.example` when building.
+Vite embeds this setting in the generated assets, so setting the variable on an
+already-built container does not change the server URL. The image includes an
+HTTP health check on port 80.
+
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
 Currently, two official plugins are available:

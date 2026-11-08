@@ -18,6 +18,7 @@ import StoreIcon from '@mui/icons-material/Store';
 import SearchIcon from '@mui/icons-material/Search';
 import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
 
+import { pb } from './lib/pb';
 import theme from './theme';
 import UpdatesChart from './components/UpdatesChart';
 import MarketplaceView from './components/MarketplaceView';
@@ -26,18 +27,16 @@ import AlertView from './components/AlertView';
 import Login from './components/Login';
 // Marketplace Provider wraps the app to provide global state
 import { MarketplaceProvider } from './contexts/MarketplaceContext';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { AuthProvider } from './contexts/AuthContext';
+import { useAuth } from './contexts/AuthState';
 
 function MainApp() {
   const { isAuthenticated, logout } = useAuth();
   const [showLogin, setShowLogin] = useState(false);
 
-  // Close the login dialog automatically if the user becomes authenticated
-  useEffect(() => {
-    if (isAuthenticated) {
-      setShowLogin(false);
-    }
-  }, [isAuthenticated]);
+  useEffect(() => pb.authStore.onChange(() => {
+    if (pb.authStore.isValid) setShowLogin(false);
+  }), []);
 
   const [currentTab, setCurrentTab] = useState(() => {
     const saved = localStorage.getItem('appCurrentTab');

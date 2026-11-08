@@ -1,16 +1,7 @@
-import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import { MarketplaceContext } from './MarketplaceState';
+import { useState, useEffect, type ReactNode } from 'react';
 import { pb, isRequestAbort } from '../lib/pb';
 import type { MarketplaceItem } from '../types';
-
-interface MarketplaceContextType {
-    items: MarketplaceItem[];
-    loadingInitial: boolean;
-    loadingBackground: boolean;
-    error: Error | null;
-    refresh: () => Promise<void>;
-}
-
-const MarketplaceContext = createContext<MarketplaceContextType | undefined>(undefined);
 
 export function MarketplaceProvider({ children }: { children: ReactNode }) {
     const [items, setItems] = useState<MarketplaceItem[]>([]);
@@ -73,12 +64,4 @@ export function MarketplaceProvider({ children }: { children: ReactNode }) {
             {children}
         </MarketplaceContext.Provider>
     );
-}
-
-export function useMarketplaceContext() {
-    const context = useContext(MarketplaceContext);
-    if (context === undefined) {
-        throw new Error('useMarketplaceContext must be used within a MarketplaceProvider');
-    }
-    return context;
 }

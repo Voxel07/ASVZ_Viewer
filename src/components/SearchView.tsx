@@ -16,6 +16,7 @@ import type { MarketplaceDeletedItem } from '../types';
 import ItemHistoryDialog from './ItemHistoryDialog';
 import { useProductImages } from '../hooks/useProductImages';
 import {
+    type TooltipContentProps,
     ComposedChart,
     Line,
     Bar,
@@ -26,6 +27,7 @@ import {
     Legend,
     ResponsiveContainer
 } from 'recharts';
+import { clampPage, searchResultsForView } from '../lib/data';
 import { dataGridSx, chartTheme, nb } from '../theme';
 
 export default function SearchView() {
@@ -40,21 +42,18 @@ export default function SearchView() {
     const [trendViewType, setTrendViewType] = useState<'week' | 'month' | 'year'>(
         () => (localStorage.getItem('searchTrendViewType') as 'week' | 'month' | 'year') || 'month'
     );
-    const [currentPeriod, setCurrentPeriod] = useState<string>('');
+    const [requestedPeriod, setCurrentPeriod] = useState<string>('');
     const [clickedGroup, setClickedGroup] = useState<string | null>(null);
 
     useEffect(() => {
         localStorage.setItem('searchTrendViewType', trendViewType);
     }, [trendViewType]);
-    const [page, setPage] = useState(() => {
+    const [requestedPage, setPage] = useState(() => {
         const saved = localStorage.getItem('searchPage');
         return saved ? parseInt(saved, 10) : 1;
     });
     const ITEMS_PER_PAGE = 24;
 
-    useEffect(() => {
-        localStorage.setItem('searchPage', page.toString());
-    }, [page]);
 
     useEffect(() => {
         localStorage.setItem('searchViewMode', viewMode);
@@ -72,7 +71,7 @@ export default function SearchView() {
         if (!data || data.length === 0) return [];
         const weeks = new Set<string>();
         data.forEach(item => {
-            const dateStr = (item as any)._isDeleted ? ((item as MarketplaceDeletedItem).last_available || item.timestamp) : item.timestamp;
+            const dateStr = item._isDeleted ? ((item as MarketplaceDeletedItem).last_available || item.timestamp) : item.timestamp;
             if (dateStr) {
                 const date = parseISO(dateStr);
                 const day = date.getDay();
@@ -88,7 +87,7 @@ export default function SearchView() {
         if (!data || data.length === 0) return [];
         const months = new Set<string>();
         data.forEach(item => {
-            const dateStr = (item as any)._isDeleted ? ((item as MarketplaceDeletedItem).last_available || item.timestamp) : item.timestamp;
+            const dateStr = item._isDeleted ? ((item as MarketplaceDeletedItem).last_available || item.timestamp) : item.timestamp;
             if (dateStr) {
                 months.add(dateStr.substring(0, 7)); // YYYY-MM
             }
@@ -100,7 +99,7 @@ export default function SearchView() {
         if (!data || data.length === 0) return [];
         const years = new Set<string>();
         data.forEach(item => {
-            const dateStr = (item as any)._isDeleted ? ((item as MarketplaceDeletedItem).last_available || item.timestamp) : item.timestamp;
+            const dateStr = item._isDeleted ? ((item as MarketplaceDeletedItem).last_available || item.timestamp) : item.timestamp;
             if (dateStr) {
                 years.add(dateStr.substring(0, 4)); // YYYY
             }
@@ -108,11 +107,14 @@ export default function SearchView() {
         return Array.from(years).sort();
     }, [data]);
 
+    const periodOptions = trendViewType === 'week' ? availableWeeks : trendViewType === 'month' ? availableMonths : availableYears;
+    const currentPeriod = periodOptions.includes(requestedPeriod) ? requestedPeriod : periodOptions.at(-1) || '';
+
     const filteredDataByPeriod = useMemo(() => {
         if (!data || data.length === 0 || !currentPeriod) return [];
 
         return data.filter(item => {
-            const dateStr = (item as any)._isDeleted ? ((item as MarketplaceDeletedItem).last_available || item.timestamp) : item.timestamp;
+            const dateStr = item._isDeleted ? ((item as MarketplaceDeletedItem).last_available || item.timestamp) : item.timestamp;
             if (!dateStr) return false;
             
             if (trendViewType === 'week') {
@@ -128,24 +130,6 @@ export default function SearchView() {
             }
         });
     }, [data, trendViewType, currentPeriod]);
-
-    useEffect(() => {
-        if (!data || data.length === 0) return;
-
-        if (trendViewType === 'week') {
-            if (availableWeeks.length > 0 && !availableWeeks.includes(currentPeriod)) {
-                setCurrentPeriod(availableWeeks[availableWeeks.length - 1]);
-            }
-        } else if (trendViewType === 'month') {
-            if (availableMonths.length > 0 && !availableMonths.includes(currentPeriod)) {
-                setCurrentPeriod(availableMonths[availableMonths.length - 1]);
-            }
-        } else if (trendViewType === 'year') {
-            if (availableYears.length > 0 && !availableYears.includes(currentPeriod)) {
-                setCurrentPeriod(availableYears[availableYears.length - 1]);
-            }
-        }
-    }, [trendViewType, data, availableWeeks, availableMonths, availableYears, currentPeriod]);
 
     const availablePeriods = useMemo(() => {
         if (trendViewType === 'week') return availableWeeks;
@@ -180,7 +164,7 @@ export default function SearchView() {
 
             return days.map(dayStr => {
                 const dayItems = filteredDataByPeriod.filter(item => {
-                    const dateStr = (item as any)._isDeleted ? ((item as MarketplaceDeletedItem).last_available || item.timestamp) : item.timestamp;
+                    const dateStr = item._isDeleted ? ((item as MarketplaceDeletedItem).last_available || item.timestamp) : item.timestamp;
                     return dateStr && dateStr.startsWith(dayStr);
                 });
                 const prices = dayItems.map(item => item.price).filter(p => p != null);
@@ -206,7 +190,7 @@ export default function SearchView() {
 
             return quarters.map(q => {
                 const qItems = filteredDataByPeriod.filter(item => {
-                    const dateStr = (item as any)._isDeleted ? ((item as MarketplaceDeletedItem).last_available || item.timestamp) : item.timestamp;
+                    const dateStr = item._isDeleted ? ((item as MarketplaceDeletedItem).last_available || item.timestamp) : item.timestamp;
                     if (!dateStr) return false;
                     const date = parseISO(dateStr);
                     const day = date.getDate();
@@ -233,7 +217,7 @@ export default function SearchView() {
 
             return months.map(mStr => {
                 const mItems = filteredDataByPeriod.filter(item => {
-                    const dateStr = (item as any)._isDeleted ? ((item as MarketplaceDeletedItem).last_available || item.timestamp) : item.timestamp;
+                    const dateStr = item._isDeleted ? ((item as MarketplaceDeletedItem).last_available || item.timestamp) : item.timestamp;
                     return dateStr && dateStr.startsWith(mStr);
                 });
                 const prices = mItems.map(item => item.price).filter(p => p != null);
@@ -262,7 +246,7 @@ export default function SearchView() {
                 const date = parseISO(`${dateStr}-01`);
                 return format(date, 'MMM');
             }
-        } catch (e) {
+        } catch {
             return dateStr;
         }
     }, [trendViewType]);
@@ -278,14 +262,14 @@ export default function SearchView() {
                 const date = parseISO(`${dateStr}-01`);
                 return format(date, 'MMMM yyyy');
             }
-        } catch (e) {
+        } catch {
             return dateStr;
         }
     }, [trendViewType, currentPeriod]);
 
-    const CustomTooltip = useCallback(({ active, payload, label }: any) => {
+    const renderTooltip = useCallback(({ active, payload, label }: TooltipContentProps<number | string | ReadonlyArray<number | string>, number | string>) => {
         if (active && payload && payload.length) {
-            const dataPoint = payload[0].payload;
+            const dataPoint = payload[0].payload as { avgPrice?: number; minPrice?: number; maxPrice?: number; count: number };
             return (
                 <Paper
                     sx={{
@@ -298,7 +282,7 @@ export default function SearchView() {
                     }}
                 >
                     <Typography variant="subtitle2" sx={{ color: 'primary.main', mb: 1 }}>
-                        {formatTooltipLabel(label)}
+                        {formatTooltipLabel(String(label ?? ''))}
                     </Typography>
                     {dataPoint.avgPrice !== undefined && (
                         <>
@@ -308,7 +292,7 @@ export default function SearchView() {
                             </Typography>
                             <Typography variant="body2" color="text.secondary" sx={{ display: 'flex', justifyContent: 'space-between', gap: 4 }}>
                                 <span>Price Range:</span>
-                                <span>{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(dataPoint.minPrice)} - {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(dataPoint.maxPrice)}</span>
+                                <span>{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(dataPoint.minPrice ?? 0)} - {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(dataPoint.maxPrice ?? 0)}</span>
                             </Typography>
                         </>
                     )}
@@ -333,7 +317,7 @@ export default function SearchView() {
                 const date = parseISO(`${groupKey}-01`);
                 return format(date, 'MMMM yyyy');
             }
-        } catch (e) {
+        } catch {
             return groupKey;
         }
     }, [trendViewType, currentPeriod]);
@@ -342,7 +326,7 @@ export default function SearchView() {
         if (!clickedGroup || !filteredDataByPeriod) return [];
         
         return filteredDataByPeriod.filter(item => {
-            const dateStr = (item as any)._isDeleted ? ((item as MarketplaceDeletedItem).last_available || item.timestamp) : item.timestamp;
+            const dateStr = item._isDeleted ? ((item as MarketplaceDeletedItem).last_available || item.timestamp) : item.timestamp;
             if (!dateStr) return false;
             
             if (trendViewType === 'week') {
@@ -398,7 +382,7 @@ export default function SearchView() {
             } else { // year
                 return periodStr;
             }
-        } catch (e) {
+        } catch {
             return periodStr;
         }
     }, [trendViewType]);
@@ -424,7 +408,13 @@ export default function SearchView() {
     }, [trendViewType, availableWeeks, availableMonths, availableYears, currentPeriod]);
 
     // NOTE: 'data' from useItemSearch has type (MarketplaceItem | MarketplaceDeletedItem)[] 
-    const currentItems = filteredDataByPeriod.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
+    const visibleData = searchResultsForView(data, filteredDataByPeriod, viewMode);
+    const page = clampPage(requestedPage, visibleData.length, ITEMS_PER_PAGE);
+    useEffect(() => {
+        localStorage.setItem('searchPage', page.toString());
+    }, [page]);
+
+    const currentItems = visibleData.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
     const { imageUrls, loadingImages } = useProductImages(viewMode === 'details' ? currentItems : []);
 
     const handleOpenHistory = useCallback((id: string, title: string) => {
@@ -496,7 +486,7 @@ export default function SearchView() {
             headerName: 'Status',
             width: 120,
             renderCell: (params: GridRenderCellParams) => {
-                const isDeleted = (params.row as any)._isDeleted;
+                const isDeleted = (params.row as MarketplaceItem)._isDeleted;
                 return (
                     <Chip
                         label={isDeleted ? "Deleted" : "Active"}
@@ -515,7 +505,7 @@ export default function SearchView() {
                 if (!value) return '';
                 try {
                     return format(parseISO(value), 'dd.MM.yyyy HH:mm');
-                } catch (e) {
+                } catch {
                     return value;
                 }
             },
@@ -572,7 +562,7 @@ export default function SearchView() {
                         control={
                             <Switch
                                 checked={includeDeleted}
-                                onChange={(e) => setIncludeDeleted(e.target.checked)}
+                                onChange={(e) => { setIncludeDeleted(e.target.checked); setPage(1); }}
                             />
                         }
                         label="Include Deleted"
@@ -581,7 +571,7 @@ export default function SearchView() {
                     <TextField
                         placeholder="Search by ID"
                         value={searchQuery.id || ''}
-                        onChange={(e) => setSearchQuery(prev => ({ ...prev, id: e.target.value }))}
+                        onChange={(e) => { setSearchQuery(prev => ({ ...prev, id: e.target.value })); setPage(1); }}
                         variant="outlined"
                         size="small"
                         sx={{ width: 150 }}
@@ -589,7 +579,7 @@ export default function SearchView() {
                     <TextField
                         placeholder="Search by User"
                         value={searchQuery.user || ''}
-                        onChange={(e) => setSearchQuery(prev => ({ ...prev, user: e.target.value }))}
+                        onChange={(e) => { setSearchQuery(prev => ({ ...prev, user: e.target.value })); setPage(1); }}
                         variant="outlined"
                         size="small"
                         sx={{ width: 200 }}
@@ -598,7 +588,7 @@ export default function SearchView() {
                     <TextField
                         placeholder="Search by Title"
                         value={searchQuery.title || ''}
-                        onChange={(e) => setSearchQuery(prev => ({ ...prev, title: e.target.value }))}
+                        onChange={(e) => { setSearchQuery(prev => ({ ...prev, title: e.target.value })); setPage(1); }}
                         slotProps={{
                             input: {
                                 startAdornment: (
@@ -650,7 +640,7 @@ export default function SearchView() {
                     </Box>
                 ) : viewMode === 'list' ? (
                     <DataGrid
-                        rows={filteredDataByPeriod}
+                        rows={visibleData}
                         columns={columns}
                         autoHeight
                         initialState={{
@@ -674,7 +664,7 @@ export default function SearchView() {
                     />
                 ) : viewMode === 'details' ? (
                     <Box>
-                        {filteredDataByPeriod.length === 0 ? (
+                        {visibleData.length === 0 ? (
                             <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 100 }}>
                                 <Typography color="text.secondary">
                                     {!searchQuery.title && !searchQuery.user && !searchQuery.id ? "Enter search criteria (at least 3 characters)" : "No results found"}
@@ -694,10 +684,10 @@ export default function SearchView() {
                                         </Grid>
                                     ))}
                                 </Grid>
-                                {filteredDataByPeriod.length > ITEMS_PER_PAGE && (
+                                {visibleData.length > ITEMS_PER_PAGE && (
                                     <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
                                         <Pagination
-                                            count={Math.ceil(filteredDataByPeriod.length / ITEMS_PER_PAGE)}
+                                            count={Math.ceil(visibleData.length / ITEMS_PER_PAGE)}
                                             page={page}
                                             onChange={(_e, p) => setPage(p)}
                                             color="primary"
@@ -709,7 +699,7 @@ export default function SearchView() {
                     </Box>
                 ) : (
                     <Box>
-                        {filteredDataByPeriod.length === 0 ? (
+                        {visibleData.length === 0 ? (
                             <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 200 }}>
                                 <Typography color="text.secondary">
                                     {!searchQuery.title && !searchQuery.user && !searchQuery.id ? "Enter search criteria (at least 3 characters)" : "No results found"}
@@ -853,7 +843,7 @@ export default function SearchView() {
                                                 allowDecimals={false}
                                             />
                                             <RechartsTooltip
-                                                content={<CustomTooltip />}
+                                                content={renderTooltip}
                                                 cursor={{ fill: 'rgba(255, 122, 26, 0.08)' }}
                                             />
                                             <Legend wrapperStyle={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em' }} />
@@ -977,7 +967,7 @@ function GroupItemsDialog({ open, onClose, groupLabel, items, onHistoryClick }: 
             headerName: 'Status',
             width: 120,
             renderCell: (params: GridRenderCellParams) => {
-                const isDeleted = (params.row as any)._isDeleted;
+                const isDeleted = (params.row as MarketplaceItem)._isDeleted;
                 return (
                     <Chip
                         label={isDeleted ? "Deleted" : "Active"}
@@ -996,7 +986,7 @@ function GroupItemsDialog({ open, onClose, groupLabel, items, onHistoryClick }: 
                 if (!value) return '';
                 try {
                     return format(parseISO(value), 'dd.MM.yyyy HH:mm');
-                } catch (e) {
+                } catch {
                     return value;
                 }
             },
