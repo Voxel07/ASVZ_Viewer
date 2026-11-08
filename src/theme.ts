@@ -777,6 +777,14 @@ export const dataGridSx: SxProps<Theme> = {
         fontSize: '0.82rem',
         '&:focus-within': { outline: 'none' },
     },
+    // Fit history buttons in the narrow action column without a clipped ellipsis.
+    '& .MuiDataGrid-cell[data-field="actions"]': {
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 0,
+        textOverflow: 'clip',
+    },
     '& .MuiDataGrid-row': { borderBottom: `1px solid ${nb.border}` },
     '& .MuiDataGrid-row:hover': { backgroundColor: 'rgba(255, 122, 26, 0.06)' },
     '& .MuiDataGrid-row.Mui-hovered': { backgroundColor: 'rgba(255, 122, 26, 0.06)' },

@@ -32,6 +32,13 @@ import { useUpdatesData } from '../hooks/useData';
 import { chartColors as COLORS, chartTheme, nb } from '../theme';
 
 const AVAILABLE_FIELDS = ['added', 'updated', 'deleted', 'total_items', 'total_value'];
+const FIELD_AXES = {
+    added: 'changes',
+    updated: 'changes',
+    deleted: 'changes',
+    total_items: 'items',
+    total_value: 'value',
+} as const;
 
 export default function UpdatesChart() {
     const [startDate, setStartDate] = useState<string>(() => {
@@ -42,6 +49,9 @@ export default function UpdatesChart() {
     const [endDate, setEndDate] = useState<string>(new Date().toISOString().slice(0, 16));
     const [selectedFields, setSelectedFields] = useState<string[]>(['added', 'updated', 'deleted']);
     const [grouping, setGrouping] = useState<'hourly' | 'daily'>('daily');
+    const hasChanges = selectedFields.some(field => ['added', 'updated', 'deleted'].includes(field));
+    const hasTotalItems = selectedFields.includes('total_items');
+    const hasTotalValue = selectedFields.includes('total_value');
 
     const { data, loading, error } = useUpdatesData(startDate, endDate);
 
@@ -164,7 +174,7 @@ export default function UpdatesChart() {
                         <AreaChart
                             data={chartData}
                             margin={{
-                                top: 10,
+                                top: 50,
                                 right: 30,
                                 left: 0,
                                 bottom: 0,
@@ -178,7 +188,7 @@ export default function UpdatesChart() {
                                     </linearGradient>
                                 ))}
                             </defs>
-                            <CartesianGrid strokeDasharray="0" stroke={chartTheme.grid} vertical={false} />
+                            <CartesianGrid yAxisId={hasChanges ? 'changes' : hasTotalItems ? 'items' : 'value'} strokeDasharray="0" stroke={chartTheme.grid} vertical={false} />
                             <XAxis
                                 dataKey="timestamp"
                                 tickFormatter={(str) => format(parseISO(str), 'dd.MM.yy')}
@@ -186,16 +196,33 @@ export default function UpdatesChart() {
                                 tick={{ fontSize: 11, fill: chartTheme.axis }}
                             />
                             <YAxis
-                                yAxisId="left"
+                                yAxisId="changes"
+                                hide={!hasChanges}
+                                allowDecimals={false}
                                 stroke={chartTheme.axis}
                                 tick={{ fontSize: 11, fill: chartTheme.axis }}
+                                label={{ value: 'Changes', position: 'top', offset: 24, fill: chartTheme.axis, fontSize: 11 }}
                             />
                             <YAxis
-                                yAxisId="right"
+                                yAxisId="items"
+                                hide={!hasTotalItems}
                                 orientation="right"
+                                width={80}
+                                allowDecimals={false}
+                                stroke={COLORS.total_items}
+                                tick={{ fontSize: 11, fill: COLORS.total_items }}
+                                tickFormatter={(value) => new Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 1 }).format(value)}
+                                label={{ value: 'Total items', position: 'top', offset: 24, fill: COLORS.total_items, fontSize: 11 }}
+                            />
+                            <YAxis
+                                yAxisId="value"
+                                hide={!hasTotalValue}
+                                orientation="right"
+                                width={85}
                                 stroke={nb.amber}
                                 tick={{ fontSize: 11, fill: nb.amber }}
                                 tickFormatter={(value) => new Intl.NumberFormat('en-US', { notation: "compact", style: "currency", currency: "EUR", maximumFractionDigits: 1 }).format(value)}
+                                label={{ value: 'Total value', position: 'top', offset: 24, fill: nb.amber, fontSize: 11 }}
                             />
                             <Tooltip
                                 contentStyle={chartTheme.tooltip}
@@ -221,7 +248,7 @@ export default function UpdatesChart() {
                                     fillOpacity={1}
                                     fill={`url(#color${field})`}
                                     animationDuration={1500}
-                                    yAxisId={field === 'total_value' ? 'right' : 'left'}
+                                    yAxisId={FIELD_AXES[field as keyof typeof FIELD_AXES]}
                                 />
                             ))}
                         </AreaChart>

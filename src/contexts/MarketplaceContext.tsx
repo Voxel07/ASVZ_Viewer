@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
-import { pb } from '../lib/pb';
+import { pb, isRequestAbort } from '../lib/pb';
 import type { MarketplaceItem } from '../types';
 
 interface MarketplaceContextType {
@@ -17,12 +17,11 @@ export function MarketplaceProvider({ children }: { children: ReactNode }) {
     const [loadingInitial, setLoadingInitial] = useState(false);
     const [loadingBackground, setLoadingBackground] = useState(false);
     const [error, setError] = useState<Error | null>(null);
+    const [refreshVersion, setRefreshVersion] = useState(0);
 
     // Initial fetch logic
     useEffect(() => {
-        // If we already have items, don't refetch automatically on mount
-        // This effectively implements caching across tab switches
-        if (items.length > 0) return;
+        const controller = new AbortController();
 
         async function loadData() {
             setLoadingInitial(true);
@@ -31,7 +30,9 @@ export function MarketplaceProvider({ children }: { children: ReactNode }) {
                 // 1. Fetch first page (e.g., 50 items) for quick responsiveness
                 const firstPage = await pb.collection('asvz_marketplace').getList<MarketplaceItem>(1, 50, {
                     sort: '-timestamp', // Assuming timestamp is the relevant sort field, or '-created'
+                    signal: controller.signal,
                 });
+                if (controller.signal.aborted) return;
 
                 setItems(firstPage.items);
                 setLoadingInitial(false);
@@ -40,29 +41,31 @@ export function MarketplaceProvider({ children }: { children: ReactNode }) {
                 setLoadingBackground(true);
                 const allItems = await pb.collection('asvz_marketplace').getFullList<MarketplaceItem>({
                     sort: '-timestamp',
+                    signal: controller.signal,
                 });
 
-                setItems(allItems);
+                if (!controller.signal.aborted) setItems(allItems);
             } catch (err) {
+                if (controller.signal.aborted || isRequestAbort(err)) return;
                 if (err instanceof Error) {
                     setError(err);
                 } else {
                     setError(new Error('Unknown error fetching marketplace items'));
                 }
             } finally {
-                setLoadingInitial(false);
-                setLoadingBackground(false);
+                if (!controller.signal.aborted) {
+                    setLoadingInitial(false);
+                    setLoadingBackground(false);
+                }
             }
         }
 
         loadData();
-    }, [items.length]);
+        return () => controller.abort();
+    }, [refreshVersion]);
 
     const refresh = async () => {
-        setItems([]); // Clear items to trigger the effect or manually call loadData logic
-        // Resetting state effectively triggers the effect because of the dependency check, 
-        // OR we can just manually run the fetch logic again. 
-        // A simpler way for manual refresh is to direct call the fetch logic, but clearing items is safe enough for now.
+        setRefreshVersion(version => version + 1);
     };
 
     return (

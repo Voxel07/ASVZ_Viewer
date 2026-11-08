@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { pb } from '../lib/pb';
+import { pb, isRequestAbort } from '../lib/pb';
 import type { MarketplaceItem, MarketplaceDeletedItem } from '../types';
 
 interface ImageStore {
@@ -53,6 +53,7 @@ export function useProductImages(items: (MarketplaceItem | MarketplaceDeletedIte
         }
 
         let isMounted = true;
+        const controller = new AbortController();
         setLoading(true);
 
         async function fetchMissingImages() {
@@ -63,7 +64,9 @@ export function useProductImages(items: (MarketplaceItem | MarketplaceDeletedIte
 
                 const records = await pb.collection('asvz_images').getFullList({
                     filter: filterStr,
+                    signal: controller.signal,
                 });
+                if (controller.signal.aborted) return;
 
                 const newCacheUpdates: ImageStore = {};
 
@@ -89,6 +92,7 @@ export function useProductImages(items: (MarketplaceItem | MarketplaceDeletedIte
                     setImageUrls({ ...globalImageCache });
                 }
             } catch (err) {
+                if (controller.signal.aborted || isRequestAbort(err)) return;
                 // On overall error (like network issue), mark all missings as error
                 const errorUpdates: ImageStore = {};
                 for (const id of missingIds) {
@@ -110,6 +114,7 @@ export function useProductImages(items: (MarketplaceItem | MarketplaceDeletedIte
 
         return () => {
             isMounted = false;
+            controller.abort();
         };
     }, [stringifiedIds]); // Depend on ID string to prevent loop on new array references
 

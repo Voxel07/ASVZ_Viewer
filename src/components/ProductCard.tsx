@@ -1,5 +1,8 @@
 import { Card, CardContent, CardMedia, Typography, Box, Chip, IconButton, Tooltip, Link, Skeleton } from '@mui/material';
 import TimelineIcon from '@mui/icons-material/Timeline';
+import PersonOutlineIcon from '@mui/icons-material/PersonOutlined';
+import CalendarTodayOutlinedIcon from '@mui/icons-material/CalendarTodayOutlined';
+import FingerprintIcon from '@mui/icons-material/Fingerprint';
 import { format, parseISO } from 'date-fns';
 import type { MarketplaceItem } from '../types';
 import React, { useState } from 'react';
@@ -128,12 +131,16 @@ const ProductCard = React.memo(function ProductCard({ item, onHistoryClick, imag
                 </Typography>
 
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1 }}>
-                    <Typography variant="caption" color="text.secondary" noWrap>
-                        ID: {item.asvz_id}
+                    <Typography variant="caption" color="text.secondary" noWrap sx={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                        <FingerprintIcon titleAccess="Item ID" sx={{ fontSize: 16, flexShrink: 0 }} />
+                        {item.asvz_id}
                     </Typography>
-                    <Typography variant="caption" color="text.secondary" noWrap>
-                        {item.user}
-                    </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, minWidth: 0, color: 'text.secondary' }}>
+                        <PersonOutlineIcon titleAccess="Seller" sx={{ fontSize: 16, flexShrink: 0 }} />
+                        <Typography variant="caption" color="text.secondary" noWrap>
+                            {item.user}
+                        </Typography>
+                    </Box>
                 </Box>
 
                 {isDeleted && (
@@ -146,7 +153,8 @@ const ProductCard = React.memo(function ProductCard({ item, onHistoryClick, imag
                     />
                 )}
 
-                <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
+                <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <CalendarTodayOutlinedIcon titleAccess="Date posted" sx={{ fontSize: 16, flexShrink: 0 }} />
                     {item.timestamp ? format(parseISO(item.timestamp), 'dd.MM.yyyy') : '-'}
                 </Typography>
             </CardContent>

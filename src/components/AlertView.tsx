@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
     Box, Paper, Typography, TextField, Button, Snackbar, Alert,
     Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
@@ -6,7 +6,8 @@ import {
     CircularProgress, Checkbox
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
-import { pb } from '../lib/pb';
+import EditIcon from '@mui/icons-material/Edit';
+import { pb, isRequestAbort } from '../lib/pb';
 import { useAuth } from '../contexts/AuthContext';
 import type { SearchAlert } from '../types';
 
@@ -23,32 +24,42 @@ export default function AlertView() {
 
     const [snackbar, setSnackbar] = useState<{ open: boolean, message: string, severity: 'success' | 'error' | 'warning' | 'info' }>({ open: false, message: '', severity: 'info' });
     const [deleteDialog, setDeleteDialog] = useState<{ open: boolean, alertId: string }>({ open: false, alertId: '' });
+    const [editingAlert, setEditingAlert] = useState<SearchAlert | null>(null);
+    const [savingEdit, setSavingEdit] = useState(false);
+    const alertsRequest = useRef<AbortController | null>(null);
+    const currentUserId = currentUser?.id || currentUser?.record?.id || '';
 
     const handleSnackbarClose = (_event?: React.SyntheticEvent | Event, reason?: string) => {
         if (reason === 'clickaway') return;
         setSnackbar({ ...snackbar, open: false });
     };
 
-    const fetchAlerts = async () => {
+    const fetchAlerts = useCallback(async () => {
+        alertsRequest.current?.abort();
         if (!isAuthenticated) return;
+        const controller = new AbortController();
+        alertsRequest.current = controller;
         setLoading(true);
         try {
             const records = await pb.collection('asvz_search_alerts').getFullList<SearchAlert>({
                 sort: '-created',
-                filter: `user_id="${currentUser?.id || (currentUser as any)?.record?.id}"`
+                filter: `user_id="${currentUserId}"`,
+                signal: controller.signal,
             });
-            setAlerts(records);
+            if (!controller.signal.aborted) setAlerts(records);
         } catch (err) {
+            if (controller.signal.aborted || isRequestAbort(err)) return;
             console.error("Failed to fetch alerts", err);
             setSnackbar({ open: true, message: "Failed to fetch alerts.", severity: 'error' });
         } finally {
-            setLoading(false);
+            if (!controller.signal.aborted) setLoading(false);
         }
-    };
+    }, [isAuthenticated, currentUserId]);
 
     useEffect(() => {
         fetchAlerts();
-    }, [isAuthenticated]);
+        return () => alertsRequest.current?.abort();
+    }, [fetchAlerts]);
 
     const handleCreateAlert = async (e: React.SyntheticEvent) => {
         e.preventDefault();
@@ -61,7 +72,7 @@ export default function AlertView() {
             await pb.collection('asvz_search_alerts').create({
                 title: titleStr,
                 user: userStr,
-                user_id: currentUser?.id || (currentUser as any)?.record?.id || '',
+                user_id: currentUserId,
                 webhook: webhookStr
             });
             setSnackbar({ open: true, message: "Alert saved successfully!", severity: 'success' });
@@ -72,6 +83,38 @@ export default function AlertView() {
         } catch (err) {
             console.error(err);
             setSnackbar({ open: true, message: "Failed to save alert.", severity: 'error' });
+        }
+    };
+
+    const handleEditClose = () => {
+        if (!savingEdit) setEditingAlert(null);
+    };
+
+    const handleUpdateAlert = async (e: React.SyntheticEvent) => {
+        e.preventDefault();
+        if (!editingAlert || savingEdit) return;
+
+        const changes = {
+            title: editingAlert.title.trim(),
+            user: editingAlert.user.trim(),
+            webhook: (editingAlert.webhook || '').trim()
+        };
+        if (!changes.title && !changes.user) {
+            setSnackbar({ open: true, message: "Please enter a Title or User to save an alert.", severity: 'warning' });
+            return;
+        }
+
+        setSavingEdit(true);
+        try {
+            const updatedAlert = await pb.collection('asvz_search_alerts').update<SearchAlert>(editingAlert.id, changes);
+            setAlerts(prev => prev.map(alert => alert.id === updatedAlert.id ? updatedAlert : alert));
+            setEditingAlert(null);
+            setSnackbar({ open: true, message: "Alert updated successfully!", severity: 'success' });
+        } catch (err) {
+            console.error(err);
+            setSnackbar({ open: true, message: "Failed to update alert. Please try again.", severity: 'error' });
+        } finally {
+            setSavingEdit(false);
         }
     };
 
@@ -221,7 +264,17 @@ export default function AlertView() {
                                             <TableCell align="right">
                                                 <IconButton
                                                     size="small"
+                                                    color="primary"
+                                                    aria-label="Edit alert"
+                                                    title="Edit alert"
+                                                    onClick={() => setEditingAlert({ ...alert })}
+                                                >
+                                                    <EditIcon fontSize="small" />
+                                                </IconButton>
+                                                <IconButton
+                                                    size="small"
                                                     color="error"
+                                                    aria-label="Delete alert"
                                                     onClick={() => setDeleteDialog({ open: true, alertId: alert.id })}
                                                 >
                                                     <DeleteIcon fontSize="small" />
@@ -241,6 +294,48 @@ export default function AlertView() {
                     {snackbar.message}
                 </Alert>
             </Snackbar>
+
+            <Dialog open={!!editingAlert} onClose={handleEditClose} fullWidth maxWidth="sm" aria-labelledby="edit-alert-title">
+                <Box component="form" onSubmit={handleUpdateAlert}>
+                    <DialogTitle id="edit-alert-title">Edit Alert</DialogTitle>
+                    <DialogContent>
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                            Enter a title or user to match. Leave the webhook empty to use the global webhook.
+                        </Typography>
+                        <TextField
+                            autoFocus
+                            label="Title Match"
+                            value={editingAlert?.title || ''}
+                            onChange={(e) => setEditingAlert(prev => prev ? { ...prev, title: e.target.value } : null)}
+                            disabled={savingEdit}
+                            margin="dense"
+                            fullWidth
+                        />
+                        <TextField
+                            label="User Match"
+                            value={editingAlert?.user || ''}
+                            onChange={(e) => setEditingAlert(prev => prev ? { ...prev, user: e.target.value } : null)}
+                            disabled={savingEdit}
+                            margin="dense"
+                            fullWidth
+                        />
+                        <TextField
+                            label="Custom Webhook URL (Optional)"
+                            value={editingAlert?.webhook || ''}
+                            onChange={(e) => setEditingAlert(prev => prev ? { ...prev, webhook: e.target.value } : null)}
+                            disabled={savingEdit}
+                            margin="dense"
+                            fullWidth
+                        />
+                    </DialogContent>
+                    <DialogActions>
+                        <Button onClick={handleEditClose} disabled={savingEdit}>Cancel</Button>
+                        <Button type="submit" variant="contained" color="secondary" disabled={savingEdit || (!editingAlert?.title.trim() && !editingAlert?.user.trim())}>
+                            {savingEdit ? 'Saving...' : 'Save Changes'}
+                        </Button>
+                    </DialogActions>
+                </Box>
+            </Dialog>
 
             <Dialog open={deleteDialog.open} onClose={() => setDeleteDialog({ open: false, alertId: '' })}>
                 <DialogTitle>Delete Alert</DialogTitle>

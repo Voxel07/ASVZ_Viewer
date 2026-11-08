@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { pb } from '../lib/pb';
+import { pb, isRequestAbort } from '../lib/pb';
 import { formatDistanceStrict } from 'date-fns';
 import type { ASVZUpdate, ASVZPrice, MarketplaceItem, MarketplaceDeletedItem } from '../types';
 
@@ -9,6 +9,8 @@ export function useUpdatesData(startDate?: string, endDate?: string) {
     const [error, setError] = useState<Error | null>(null);
 
     useEffect(() => {
+        const controller = new AbortController();
+
         async function fetchData() {
             setLoading(true);
             setError(null);
@@ -30,27 +32,25 @@ export function useUpdatesData(startDate?: string, endDate?: string) {
                 const records = await pb.collection('asvz_updates').getFullList<ASVZUpdate>({
                     sort: 'timestamp',
                     filter: filter,
-                    // Add request cancellation handling if needed, but the stable dependency 
-                    // should fix the infinite loop.
+                    signal: controller.signal,
                 });
 
-                setData(records);
+                if (!controller.signal.aborted) setData(records);
             } catch (err) {
+                if (controller.signal.aborted || isRequestAbort(err)) return;
                 if (err instanceof Error) {
-                    // Ignore auto-cancellation errors to avoid state noise
-                    if (err.name !== 'AbortError' && !err.message.includes('autocancelled')) {
-                        setError(err);
-                    }
+                    setError(err);
                 } else {
                     setError(new Error('Unknown error fetching updates'));
                 }
                 console.error("Error fetching updates:", err);
             } finally {
-                setLoading(false);
+                if (!controller.signal.aborted) setLoading(false);
             }
         }
 
         fetchData();
+        return () => controller.abort();
     }, [startDate, endDate]);
 
     return { data, loading, error };
@@ -66,8 +66,12 @@ export function usePriceData(asvzId: string) {
         if (!asvzId) {
             setData([]);
             setTitle(null);
+            setLoading(false);
+            setError(null);
             return;
         }
+
+        const controller = new AbortController();
 
         async function fetchData() {
             setLoading(true);
@@ -76,12 +80,14 @@ export function usePriceData(asvzId: string) {
                 const records = await pb.collection('asvz_price').getFullList<ASVZPrice>({
                     sort: 'timestamp',
                     filter: `asvz_id = "${asvzId}"`,
+                    signal: controller.signal,
                 });
-                setData(records);
+                if (controller.signal.aborted) return;
 
                 // Fetch Title and Current/Final Price
                 try {
-                    const product = await pb.collection('asvz_marketplace').getFirstListItem(`asvz_id="${asvzId}"`);
+                    const product = await pb.collection('asvz_marketplace').getFirstListItem(`asvz_id="${asvzId}"`, { signal: controller.signal });
+                    if (controller.signal.aborted) return;
                     setTitle(product.title);
 
                     // Add current price as the latest data point
@@ -94,10 +100,12 @@ export function usePriceData(asvzId: string) {
                             title: product.title
                         });
                     }
-                } catch (e) {
+                } catch (err) {
+                    if (controller.signal.aborted || isRequestAbort(err)) return;
                     // Try deleted items
                     try {
-                        const deletedProduct = await pb.collection('asvz_marketplace_deleted').getFirstListItem(`asvz_id="${asvzId}"`);
+                        const deletedProduct = await pb.collection('asvz_marketplace_deleted').getFirstListItem(`asvz_id="${asvzId}"`, { signal: controller.signal });
+                        if (controller.signal.aborted) return;
                         setTitle(deletedProduct.title);
 
                         // Add final price
@@ -110,7 +118,8 @@ export function usePriceData(asvzId: string) {
                                 title: deletedProduct.title
                             });
                         }
-                    } catch (e2) {
+                    } catch (err) {
+                        if (controller.signal.aborted || isRequestAbort(err)) return;
                         setTitle(null); // Not found
                     }
                 }
@@ -120,21 +129,20 @@ export function usePriceData(asvzId: string) {
 
                 setData(records);
             } catch (err) {
+                if (controller.signal.aborted || isRequestAbort(err)) return;
                 if (err instanceof Error) {
-                    // Ignore auto-cancellation errors (common in React 18 strict mode double-mounts)
-                    if (err.name !== 'AbortError' && !err.message.includes('autocancelled')) {
-                        setError(err);
-                    }
+                    setError(err);
                 } else {
                     setError(new Error('Unknown error fetching prices'));
                 }
                 console.error("Error fetching prices:", err);
             } finally {
-                setLoading(false);
+                if (!controller.signal.aborted) setLoading(false);
             }
         }
 
         fetchData();
+        return () => controller.abort();
     }, [asvzId]);
 
     return { data, title, loading, error };
@@ -146,21 +154,27 @@ export function useMarketplaceItems() {
     const [error, setError] = useState<Error | null>(null);
 
     useEffect(() => {
+        const controller = new AbortController();
+
         async function fetchItems() {
             setLoading(true);
+            setError(null);
             try {
                 const records = await pb.collection('asvz_marketplace').getFullList<MarketplaceItem>({
                     sort: '-created',
+                    signal: controller.signal,
                 });
-                setData(records);
+                if (!controller.signal.aborted) setData(records);
             } catch (err) {
+                if (controller.signal.aborted || isRequestAbort(err)) return;
                 if (err instanceof Error) setError(err);
                 else setError(new Error('Error fetching marketplace items'));
             } finally {
-                setLoading(false);
+                if (!controller.signal.aborted) setLoading(false);
             }
         }
         fetchItems();
+        return () => controller.abort();
     }, []);
 
     return { data, loading, error };
@@ -185,8 +199,12 @@ export function useItemSearch(query: SearchQuery, includeDeleted: boolean) {
 
         if (!hasValidTitle && !hasValidUser && !hasValidId) {
             setData([]);
+            setLoading(false);
+            setError(null);
             return;
         }
+
+        const controller = new AbortController();
 
         async function search() {
             setLoading(true);
@@ -212,7 +230,9 @@ export function useItemSearch(query: SearchQuery, includeDeleted: boolean) {
                 const liveResult = await pb.collection('asvz_marketplace').getFullList<MarketplaceItem>({
                     filter: filterExpression,
                     sort: '-created',
+                    signal: controller.signal,
                 });
+                if (controller.signal.aborted) return;
 
                 let allItems: (MarketplaceItem | MarketplaceDeletedItem)[] = [...liveResult];
 
@@ -220,7 +240,9 @@ export function useItemSearch(query: SearchQuery, includeDeleted: boolean) {
                     const deletedResult = await pb.collection('asvz_marketplace_deleted').getFullList<MarketplaceDeletedItem>({
                         filter: filterExpression,
                         sort: '-created',
+                        signal: controller.signal,
                     });
+                    if (controller.signal.aborted) return;
 
                     // Mark as deleted and ensure fields are present for UI
                     const mappedDeleted = deletedResult.map(item => {
@@ -251,17 +273,21 @@ export function useItemSearch(query: SearchQuery, includeDeleted: boolean) {
 
                 setData(allItems);
             } catch (err) {
+                if (controller.signal.aborted || isRequestAbort(err)) return;
                 if (err instanceof Error) setError(err);
                 else setError(new Error('Error searching items'));
                 console.error("Search error:", err);
             } finally {
-                setLoading(false);
+                if (!controller.signal.aborted) setLoading(false);
             }
         }
 
         // Debounce
         const timeoutId = setTimeout(search, 500);
-        return () => clearTimeout(timeoutId);
+        return () => {
+            clearTimeout(timeoutId);
+            controller.abort();
+        };
 
     }, [query.title, query.user, query.id, includeDeleted]);
 
