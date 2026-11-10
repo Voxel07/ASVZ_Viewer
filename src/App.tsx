@@ -52,7 +52,7 @@ function MainApp() {
   };
 
   return (
-    <Box sx={{ flexGrow: 1, height: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <Box sx={{ height: '100dvh', display: 'flex', flexDirection: 'column', minWidth: 0 }}>
       <AppBar
         position="static"
         color="transparent"
@@ -61,20 +61,27 @@ function MainApp() {
           bgcolor: 'rgba(15, 15, 15, 0.96)',
           borderBottom: '2px solid',
           borderColor: 'divider',
+          flexShrink: 0,
         }}
       >
-        <Toolbar sx={{ gap: 2 }}>
+        <Toolbar sx={{
+          gap: { xs: 1, lg: 2 },
+          flexWrap: { xs: 'wrap', lg: 'nowrap' },
+          px: { xs: 2, sm: 3 },
+          pt: { xs: 1.5, lg: 0 },
+        }}>
           <Typography
             variant="h6"
             component="div"
             sx={{
-              flexGrow: 0,
-              mr: 2,
+              flexGrow: { xs: 1, lg: 0 },
+              mr: { xs: 0, lg: 2 },
               pl: 1.5,
               borderLeft: '6px solid',
               borderColor: 'primary.main',
               fontWeight: 900,
-              letterSpacing: '0.14em',
+              letterSpacing: { xs: '0.06em', sm: '0.14em' },
+              fontSize: { xs: '0.85rem', sm: '0.95rem' },
               color: 'text.primary',
               whiteSpace: 'nowrap',
             }}
@@ -82,7 +89,30 @@ function MainApp() {
             ASVZ Analytics
           </Typography>
 
-          <Tabs value={currentTab} onChange={handleTabChange} textColor="primary" indicatorColor="primary" sx={{ flexGrow: 1 }}>
+          <Tabs
+            aria-label="Main navigation"
+            value={currentTab}
+            onChange={handleTabChange}
+            textColor="primary"
+            indicatorColor="primary"
+            variant="fullWidth"
+            sx={{
+              flexGrow: 1,
+              order: { xs: 3, lg: 0 },
+              width: { xs: '100%', lg: 'auto' },
+              minWidth: 0,
+              '& .MuiTab-root': {
+                minWidth: 0,
+                px: { xs: 0.25, sm: 2 },
+                minHeight: { xs: 64, sm: 56 },
+                fontSize: { xs: '0.55rem', sm: '0.75rem' },
+                letterSpacing: { xs: 0, sm: '0.09em' },
+                flexDirection: { xs: 'column', sm: 'row' },
+                gap: { xs: 0.5, sm: 1 },
+              },
+              '& .MuiTab-icon': { mr: 0, mb: 0, fontSize: { xs: 21, sm: 24 } },
+            }}
+          >
             <Tab icon={<DashboardIcon />} iconPosition="start" label="Dashboard" />
             <Tab icon={<StoreIcon />} iconPosition="start" label="Marketplace" />
             <Tab icon={<SearchIcon />} iconPosition="start" label="Search" />
@@ -121,8 +151,8 @@ function MainApp() {
         <Login />
       </Dialog>
 
-      <Box sx={{ flexGrow: 1, overflow: 'auto', py: 4, bgcolor: 'transparent' }}>
-        <Container maxWidth={false} sx={{ width: '90%' }}>
+      <Box component="main" sx={{ flexGrow: 1, minHeight: 0, overflow: 'auto', py: { xs: 2, sm: 3, lg: 4 }, pb: 'max(24px, env(safe-area-inset-bottom))', bgcolor: 'transparent' }}>
+        <Container maxWidth={false} sx={{ width: { xs: '100%', lg: '90%' }, px: { xs: 1.5, sm: 3 } }}>
           {/* Tab Panel 0: Dashboard */}
           <div role="tabpanel" hidden={currentTab !== 0}>
             {currentTab === 0 && (

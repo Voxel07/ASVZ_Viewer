@@ -10,6 +10,7 @@ import {
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import ItemPriceChart from './ItemPriceChart';
+import { useMobile } from '../hooks/useMobile';
 
 interface ItemHistoryDialogProps {
     open: boolean;
@@ -19,26 +20,28 @@ interface ItemHistoryDialogProps {
 }
 
 export default function ItemHistoryDialog({ open, onClose, asvzId, title }: ItemHistoryDialogProps) {
+    const isMobile = useMobile();
     return (
         <Dialog
             open={open}
             onClose={onClose}
             maxWidth="md"
             fullWidth
+            fullScreen={isMobile}
         >
             <DialogTitle sx={{ m: 0, p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <Typography variant="h6" component="div" noWrap sx={{ maxWidth: '90%' }}>
+                <Typography variant="h6" component="div" sx={{ minWidth: 0, overflowWrap: 'anywhere', pr: 1 }}>
                     Price History: {title}
                 </Typography>
                 <IconButton
                     aria-label="close"
                     onClick={onClose}
-                    sx={{ color: 'text.secondary' }}
+                    sx={{ color: 'text.secondary', flexShrink: 0 }}
                 >
                     <CloseIcon />
                 </IconButton>
             </DialogTitle>
-            <DialogContent dividers>
+            <DialogContent dividers sx={{ px: { xs: 1, sm: 3 } }}>
                 <Box sx={{ minHeight: 300 }}>
                     <ItemPriceChart asvzId={asvzId} />
                 </Box>

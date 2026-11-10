@@ -304,6 +304,7 @@ const theme = createTheme({
                     borderRadius: 0,
                     border: '2px solid transparent',
                     color: nb.muted,
+                    '@media (max-width: 599.95px)': { minWidth: 44, minHeight: 44 },
                     transition: 'background-color 120ms ease, color 120ms ease, border-color 120ms ease',
                     '&:hover': {
                         backgroundColor: nb.accent,
@@ -360,6 +361,7 @@ const theme = createTheme({
                     border: `2px solid ${nb.border}`,
                     color: nb.muted,
                     padding: '6px 14px',
+                    '@media (max-width: 599.95px)': { minWidth: 44, minHeight: 44 },
                     fontWeight: 800,
                     fontSize: '0.7rem',
                     textTransform: 'uppercase',
@@ -419,7 +421,7 @@ const theme = createTheme({
             styleOverrides: { root: { borderRadius: 0, backgroundColor: nb.sunken } },
         },
         MuiInputBase: {
-            styleOverrides: { root: { borderRadius: 0 } },
+            styleOverrides: { root: { borderRadius: 0 }, input: { '@media (max-width: 599.95px)': { fontSize: 16 } } },
         },
         MuiFormControlLabel: {
             styleOverrides: {
@@ -523,6 +525,9 @@ const theme = createTheme({
                     border: `2px solid ${nb.borderStrong}`,
                     backgroundImage: 'none',
                     boxShadow: HARD_PANEL,
+                    '@media (max-width: 599.95px)': {
+                        '&:not(.MuiDialog-paperFullScreen)': { margin: 16, width: 'calc(100% - 32px)', maxHeight: 'calc(100% - 32px)' },
+                    },
                 },
             },
         },
@@ -552,6 +557,7 @@ const theme = createTheme({
                     borderTop: `2px solid ${nb.border}`,
                     backgroundColor: nb.surfaceAlt,
                     gap: 8,
+                    flexWrap: 'wrap',
                 },
             },
         },

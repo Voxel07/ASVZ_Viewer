@@ -118,7 +118,8 @@ const ProductCard = React.memo(function ProductCard({ item, onHistoryClick, imag
                         mb: 1,
                         transition: 'color 120ms ease',
                         display: '-webkit-box',
-                        WebkitLineClamp: 2,
+                        WebkitLineClamp: { xs: 'unset', sm: 2 },
+                        overflowWrap: 'anywhere',
                         WebkitBoxOrient: 'vertical',
                         overflow: 'hidden'
                     }}

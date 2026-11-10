@@ -29,8 +29,11 @@ import {
 } from 'recharts';
 import { clampPage, searchResultsForView } from '../lib/data';
 import { dataGridSx, chartTheme, nb } from '../theme';
+import { useMobile } from '../hooks/useMobile';
+import MobileListings from './MobileListings';
 
 export default function SearchView() {
+    const isMobile = useMobile();
     const [searchQuery, setSearchQuery] = useState<SearchQuery>(() => {
         const saved = localStorage.getItem('searchQueryObj');
         return saved ? JSON.parse(saved) : { title: '', user: '', id: '' };
@@ -522,7 +525,7 @@ export default function SearchView() {
     ], [handleOpenHistory]);
 
     return (
-        <Paper sx={{ p: 3, display: 'flex', flexDirection: 'column' }}>
+        <Paper sx={{ p: { xs: 2, sm: 3 }, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
             <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
                 <Box>
                     <Typography variant="h6" color="primary">
@@ -531,7 +534,7 @@ export default function SearchView() {
                     <Box sx={{ height: 3, width: 56, bgcolor: 'primary.main', mt: 1 }} />
                 </Box>
 
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', width: { xs: '100%', lg: 'auto' }, gap: 2 }}>
                     <ToggleButtonGroup
                         value={viewMode}
                         exclusive
@@ -574,7 +577,8 @@ export default function SearchView() {
                         onChange={(e) => { setSearchQuery(prev => ({ ...prev, id: e.target.value })); setPage(1); }}
                         variant="outlined"
                         size="small"
-                        sx={{ width: 150 }}
+                        slotProps={{ htmlInput: { 'aria-label': 'Search by ID' } }}
+                        sx={{ width: { xs: '100%', sm: 150 }, flexGrow: { sm: 1, lg: 0 } }}
                     />
                     <TextField
                         placeholder="Search by User"
@@ -582,7 +586,8 @@ export default function SearchView() {
                         onChange={(e) => { setSearchQuery(prev => ({ ...prev, user: e.target.value })); setPage(1); }}
                         variant="outlined"
                         size="small"
-                        sx={{ width: 200 }}
+                        slotProps={{ htmlInput: { 'aria-label': 'Search by User' } }}
+                        sx={{ width: { xs: '100%', sm: 200 }, flexGrow: { sm: 1, lg: 0 } }}
                         disabled={!!searchQuery.id && searchQuery.id.length > 0}
                     />
                     <TextField
@@ -590,6 +595,7 @@ export default function SearchView() {
                         value={searchQuery.title || ''}
                         onChange={(e) => { setSearchQuery(prev => ({ ...prev, title: e.target.value })); setPage(1); }}
                         slotProps={{
+                            htmlInput: { 'aria-label': 'Search by Title' },
                             input: {
                                 startAdornment: (
                                     <InputAdornment position="start">
@@ -600,7 +606,7 @@ export default function SearchView() {
                         }}
                         variant="outlined"
                         size="small"
-                        sx={{ width: 300 }}
+                        sx={{ width: { xs: '100%', sm: 300 }, flexGrow: { sm: 1, lg: 0 } }}
                         disabled={!!searchQuery.id && searchQuery.id.length > 0}
                     />
                 </Box>
@@ -638,6 +644,8 @@ export default function SearchView() {
                             </Box>
                         )}
                     </Box>
+                ) : viewMode === 'list' && isMobile ? (
+                    <MobileListings items={visibleData} onHistoryClick={handleOpenHistory} emptyMessage={!searchQuery.title && !searchQuery.user && !searchQuery.id ? 'Enter search criteria (at least 3 characters)' : 'No results found'} />
                 ) : viewMode === 'list' ? (
                     <DataGrid
                         rows={visibleData}
@@ -687,6 +695,8 @@ export default function SearchView() {
                                 {visibleData.length > ITEMS_PER_PAGE && (
                                     <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
                                         <Pagination
+                                            size={isMobile ? 'small' : 'medium'}
+                                            siblingCount={isMobile ? 0 : 1}
                                             count={Math.ceil(visibleData.length / ITEMS_PER_PAGE)}
                                             page={page}
                                             onChange={(_e, p) => setPage(p)}
@@ -708,7 +718,7 @@ export default function SearchView() {
                         ) : (
                             <Box>
                                 {/* Period Navigation */}
-                                <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', mb: 3, gap: 2 }}>
+                                <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center', mb: 3, gap: { xs: 1, sm: 2 } }}>
                                     <Button
                                         variant="outlined"
                                         size="small"
@@ -718,8 +728,9 @@ export default function SearchView() {
                                     >
                                         Previous
                                     </Button>
-                                    <FormControl size="small" sx={{ minWidth: 220 }}>
+                                    <FormControl size="small" sx={{ minWidth: 0, width: { xs: '100%', sm: 220 }, order: { xs: -1, sm: 0 } }}>
                                         <Select
+                                            inputProps={{ 'aria-label': 'Trend period' }}
                                             value={currentPeriod}
                                             onChange={(e) => setCurrentPeriod(e.target.value as string)}
                                             sx={{
@@ -786,7 +797,7 @@ export default function SearchView() {
                                     <Typography variant="subtitle1" color="primary" sx={{ fontWeight: 'medium' }}>
                                         Price & Volume Trend Over Time
                                     </Typography>
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 1 }}>
                                         <Typography variant="body2" color="text.secondary">
                                             Trend View:
                                         </Typography>
@@ -805,8 +816,8 @@ export default function SearchView() {
                                     </Box>
                                 </Box>
 
-                                <Box sx={{ height: 400, width: '100%', position: 'relative', overflow: 'hidden' }}>
-                                    <ResponsiveContainer width="99%" height={400}>
+                                <Box sx={{ height: { xs: 300, sm: 400 }, width: '100%', minWidth: 0, position: 'relative' }}>
+                                    <ResponsiveContainer width="100%" height="100%">
                                         <ComposedChart
                                             data={groupedData}
                                             onClick={(state) => {
@@ -817,9 +828,9 @@ export default function SearchView() {
                                             style={{ cursor: 'pointer' }}
                                             margin={{
                                                 top: 20,
-                                                right: 20,
+                                                right: isMobile ? 0 : 20,
                                                 bottom: 20,
-                                                left: 20,
+                                                left: isMobile ? 0 : 20,
                                             }}
                                         >
                                             <CartesianGrid strokeDasharray="0" stroke={chartTheme.grid} vertical={false} />
@@ -830,12 +841,14 @@ export default function SearchView() {
                                                 tick={{ fontSize: 11, fill: chartTheme.axis }}
                                             />
                                             <YAxis
+                                                width={isMobile ? 48 : 60}
                                                 yAxisId="left"
                                                 stroke={chartTheme.axis}
                                                 tick={{ fontSize: 11, fill: chartTheme.axis }}
                                                 tickFormatter={(value) => `${value} €`}
                                             />
                                             <YAxis
+                                                width={isMobile ? 32 : 60}
                                                 yAxisId="right"
                                                 orientation="right"
                                                 stroke={chartTheme.axis}
@@ -909,6 +922,7 @@ interface GroupItemsDialogProps {
 }
 
 function GroupItemsDialog({ open, onClose, groupLabel, items, onHistoryClick }: GroupItemsDialogProps) {
+    const isMobile = useMobile();
     const columns: GridColDef[] = useMemo(() => [
         {
             field: 'actions',
@@ -1003,17 +1017,17 @@ function GroupItemsDialog({ open, onClose, groupLabel, items, onHistoryClick }: 
     ], [onHistoryClick]);
 
     return (
-        <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth>
+        <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth fullScreen={isMobile}>
             <DialogTitle sx={{ m: 0, p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <Typography variant="h6" component="div">
+                <Typography variant="h6" component="div" sx={{ minWidth: 0, overflowWrap: 'anywhere' }}>
                     Listings in {groupLabel} ({items.length} items)
                 </Typography>
-                <IconButton aria-label="close" onClick={onClose} sx={{ color: 'text.secondary' }}>
+                <IconButton aria-label="close" onClick={onClose} sx={{ color: 'text.secondary', flexShrink: 0 }}>
                     <CloseIcon />
                 </IconButton>
             </DialogTitle>
             <DialogContent dividers sx={{ p: 0, height: 500, display: 'flex', flexDirection: 'column' }}>
-                <DataGrid
+                {isMobile ? <Box sx={{ p: 2 }}><MobileListings items={items} onHistoryClick={onHistoryClick} /></Box> : <DataGrid
                     rows={items}
                     columns={columns}
                     getRowId={(row) => row.id}
@@ -1028,7 +1042,7 @@ function GroupItemsDialog({ open, onClose, groupLabel, items, onHistoryClick }: 
                         ...dataGridSx,
                         flexGrow: 1,
                     }}
-                />
+                />}
             </DialogContent>
             <DialogActions sx={{ px: 3, py: 2 }}>
                 <Button variant="outlined" onClick={onClose}>Close</Button>

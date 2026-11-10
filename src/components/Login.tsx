@@ -15,10 +15,10 @@ export default function Login() {
     const [error, setError] = useState<string | null>(null);
 
     return (
-        <Container component="main" maxWidth="xs">
+        <Container component="section" maxWidth="xs" sx={{ px: { xs: 0, sm: 2 }, py: 1 }}>
             <Box
                 sx={{
-                    marginTop: 8,
+                    marginTop: 0,
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
@@ -26,7 +26,7 @@ export default function Login() {
             >
                 <Paper
                     sx={{
-                        p: 4,
+                        p: { xs: 2, sm: 4 },
                         display: 'flex',
                         flexDirection: 'column',
                         alignItems: 'center',
@@ -100,7 +100,7 @@ export default function Login() {
                             fullWidth
                             variant="contained"
                             color="primary"
-                            sx={{ mt: 1, mb: 2, height: 48 }}
+                            sx={{ mt: 1, mb: 2, minHeight: 48, height: 'auto' }}
                             onClick={async () => {
                                 setLoading(true);
                                 try {

@@ -11,8 +11,11 @@ import ProductCard from './ProductCard';
 import { useProductImages } from '../hooks/useProductImages';
 import { clampPage } from '../lib/data';
 import { dataGridSx } from '../theme';
+import { useMobile } from '../hooks/useMobile';
+import MobileListings from './MobileListings';
 
 export default function MarketplaceView() {
+    const isMobile = useMobile();
     const { items: data, loadingInitial: loading, error } = useMarketplaceContext();
     const [selectedItem, setSelectedItem] = useState<{ id: string; title: string } | null>(null);
     const [viewMode, setViewMode] = useState<'list' | 'details'>(
@@ -116,7 +119,7 @@ export default function MarketplaceView() {
     ];
 
     return (
-        <Paper sx={{ p: 3, display: 'flex', flexDirection: 'column' }}>
+        <Paper sx={{ p: { xs: 2, sm: 3 }, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
             <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
                 <Box>
                     <Typography variant="h6" color="primary">
@@ -154,6 +157,8 @@ export default function MarketplaceView() {
                     <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 300 }}>
                         <CircularProgress />
                     </Box>
+                ) : viewMode === 'list' && isMobile ? (
+                    <MobileListings items={data} onHistoryClick={handleOpenHistory} />
                 ) : viewMode === 'list' ? (
                     <DataGrid
                         rows={data}
@@ -205,6 +210,8 @@ export default function MarketplaceView() {
                                 {data.length > ITEMS_PER_PAGE && (
                                     <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
                                         <Pagination
+                                            size={isMobile ? 'small' : 'medium'}
+                                            siblingCount={isMobile ? 0 : 1}
                                             count={Math.ceil(data.length / ITEMS_PER_PAGE)}
                                             page={page}
                                             onChange={(_e, p) => setPage(p)}

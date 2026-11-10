@@ -32,6 +32,7 @@ import { useUpdatesData } from '../hooks/useData';
 import { dailyUpdates, toLocalInput, type ChartUpdate } from '../lib/data';
 import type { SelectChangeEvent } from '@mui/material';
 import { chartColors as COLORS, chartTheme, nb } from '../theme';
+import { useMobile } from '../hooks/useMobile';
 
 const AVAILABLE_FIELDS = ['added', 'updated', 'deleted', 'total_items', 'total_value'];
 const FIELD_AXES = {
@@ -43,6 +44,7 @@ const FIELD_AXES = {
 } as const;
 
 export default function UpdatesChart() {
+    const isMobile = useMobile();
     const [startDate, setStartDate] = useState<string>(() => {
         const date = new Date();
         date.setMonth(date.getMonth() - 1);
@@ -73,16 +75,17 @@ export default function UpdatesChart() {
     }, [data, grouping]);
 
     return (
-        <Paper sx={{ p: 3 }}>
+        <Paper sx={{ p: { xs: 2, sm: 3 }, minWidth: 0 }}>
             <Typography variant="h6" gutterBottom color="primary">
                 Collection Updates
             </Typography>
 
             <Box sx={{ height: 3, width: 56, bgcolor: 'primary.main', mb: 3 }} />
 
-            <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{ mb: 4, alignItems: 'center' }}>
+            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} useFlexGap sx={{ mb: 3, flexWrap: 'wrap', alignItems: { xs: 'stretch', sm: 'center' } }}>
                 <TextField
                     label="Start Date"
+                    sx={{ width: { xs: '100%', sm: 'calc(50% - 8px)', md: 'auto' } }}
                     type="datetime-local"
                     value={startDate}
                     onChange={(e) => setStartDate(e.target.value)}
@@ -92,6 +95,7 @@ export default function UpdatesChart() {
                 />
                 <TextField
                     label="End Date"
+                    sx={{ width: { xs: '100%', sm: 'calc(50% - 8px)', md: 'auto' } }}
                     type="datetime-local"
                     value={endDate}
                     onChange={(e) => setEndDate(e.target.value)}
@@ -100,9 +104,10 @@ export default function UpdatesChart() {
                     size="small"
                 />
 
-                <FormControl sx={{ m: 1, width: 300 }} size="small">
-                    <InputLabel>Fields</InputLabel>
+                <FormControl sx={{ width: { xs: '100%', sm: 300 }, minWidth: 0 }} size="small">
+                    <InputLabel id="update-fields-label">Fields</InputLabel>
                     <Select
+                        labelId="update-fields-label"
                         multiple
                         value={selectedFields}
                         onChange={handleFieldChange}
@@ -129,7 +134,7 @@ export default function UpdatesChart() {
                 />
             </Stack>
 
-            <Box sx={{ height: 400, width: '100%' }}>
+            <Box sx={{ height: { xs: 300, sm: 400 }, width: '100%', minWidth: 0 }}>
                 {loading && <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}><CircularProgress /></Box>}
                 {error && <Alert severity="error">{error.message}</Alert>}
                 {!loading && !error && chartData.length > 0 && (
@@ -138,7 +143,7 @@ export default function UpdatesChart() {
                             data={chartData}
                             margin={{
                                 top: 50,
-                                right: 30,
+                                right: isMobile ? 4 : 30,
                                 left: 0,
                                 bottom: 0,
                             }}
@@ -160,6 +165,7 @@ export default function UpdatesChart() {
                             />
                             <YAxis
                                 yAxisId="changes"
+                                width={isMobile ? 40 : 60}
                                 hide={!hasChanges}
                                 allowDecimals={false}
                                 stroke={chartTheme.axis}
@@ -170,7 +176,7 @@ export default function UpdatesChart() {
                                 yAxisId="items"
                                 hide={!hasTotalItems}
                                 orientation="right"
-                                width={80}
+                                width={isMobile ? 46 : 80}
                                 allowDecimals={false}
                                 stroke={COLORS.total_items}
                                 tick={{ fontSize: 11, fill: COLORS.total_items }}
@@ -181,7 +187,7 @@ export default function UpdatesChart() {
                                 yAxisId="value"
                                 hide={!hasTotalValue}
                                 orientation="right"
-                                width={85}
+                                width={isMobile ? 52 : 85}
                                 stroke={nb.amber}
                                 tick={{ fontSize: 11, fill: nb.amber }}
                                 tickFormatter={(value) => new Intl.NumberFormat('en-US', { notation: "compact", style: "currency", currency: "EUR", maximumFractionDigits: 1 }).format(value)}
@@ -267,7 +273,7 @@ function HighscoreTrack({ data, fields }: { data: ChartUpdate[], fields: string[
                 {stats.map(stat => {
                     if (!stat) return null;
                     return (
-                        <Paper key={stat.field} sx={{ p: 2, minWidth: 200, borderLeft: `6px solid ${nb.accent}` }}>
+                        <Paper key={stat.field} sx={{ p: 2, minWidth: 0, width: { xs: '100%', sm: 'auto' }, flex: { sm: '1 1 200px' }, borderLeft: `6px solid ${nb.accent}` }}>
                             <Typography variant="overline" sx={{ color: 'text.secondary', display: 'block', mb: 1 }}>
                                 {stat.field.replace('_', ' ')}
                             </Typography>

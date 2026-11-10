@@ -1,5 +1,18 @@
 # React + TypeScript + Vite
 
+## Local development
+
+Run `npm run dev` to start the local Vite app. The viewer defaults to the
+production PocketBase at `https://pb.matzeschneider.de`; use
+`VITE_POCKETBASE_URL` in `.env.local` to override it. Authenticated screens use
+the normal Login / Authentik flow in the local browser.
+
+Below 600px, listings and alerts use cards, filters fill the available width,
+and listing history / trend drill-down dialogs fill the screen. Below 1200px,
+navigation moves onto a separate row. Check Dashboard, Marketplace (list and
+details), Search (list, details, and trends), Alerts, and their dialogs when
+changing these layouts. Local validation screenshots can be stored in `tmp/`.
+
 ## Docker
 
 The Dockerfile builds the frontend with Bun and serves the resulting static files

@@ -11,8 +11,10 @@ import { pb, isRequestAbort } from '../lib/pb';
 import { useAuth } from '../contexts/AuthState';
 import { deleteAlerts } from '../lib/data';
 import type { SearchAlert } from '../types';
+import { useMobile } from '../hooks/useMobile';
 
 export default function AlertView() {
+    const isMobile = useMobile();
     const { isAuthenticated, user: currentUser } = useAuth();
     const [alerts, setAlerts] = useState<SearchAlert[]>([]);
     const [loading, setLoading] = useState(false);
@@ -172,32 +174,38 @@ export default function AlertView() {
 
     return (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-            <Paper sx={{ p: 3 }}>
+            <Paper sx={{ p: { xs: 2, sm: 3 }, minWidth: 0 }}>
                 <Typography variant="h6" color="primary" sx={{ mb: 2 }}>Create New Alert</Typography>
                 <Box component="form" onSubmit={handleCreateAlert} sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
                     <TextField
+                        label="Title Match"
                         placeholder="Search by Title"
                         value={titleStr}
                         onChange={(e) => setTitleStr(e.target.value)}
                         variant="outlined"
                         size="small"
-                        sx={{ width: 300 }}
+                        slotProps={{ htmlInput: { 'aria-label': 'Alert title match' } }}
+                        sx={{ width: { xs: '100%', sm: 300 }, maxWidth: '100%' }}
                     />
                     <TextField
+                        label="User Match"
                         placeholder="Search by User"
                         value={userStr}
                         onChange={(e) => setUserStr(e.target.value)}
                         variant="outlined"
                         size="small"
-                        sx={{ width: 250 }}
+                        slotProps={{ htmlInput: { 'aria-label': 'Alert user match' } }}
+                        sx={{ width: { xs: '100%', sm: 250 }, maxWidth: '100%' }}
                     />
                     <TextField
+                        label="Webhook URL (optional)"
                         placeholder="Custom Webhook URL (Optional)"
                         value={webhookStr}
                         onChange={(e) => setWebhookStr(e.target.value)}
                         variant="outlined"
                         size="small"
-                        sx={{ width: 350 }}
+                        slotProps={{ htmlInput: { 'aria-label': 'Alert webhook URL' } }}
+                        sx={{ width: { xs: '100%', sm: 350 }, maxWidth: '100%' }}
                     />
                     <Button
                         type="submit"
@@ -210,8 +218,8 @@ export default function AlertView() {
                 </Box>
             </Paper>
 
-            <Paper sx={{ p: 3 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+            <Paper sx={{ p: { xs: 2, sm: 3 }, minWidth: 0 }}>
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                     <Typography variant="h6" color="primary">Active Alerts</Typography>
                     {selectedAlerts.length > 0 && (
                         <Button variant="outlined" color="error" onClick={handleBulkDelete} disabled={loading}>
@@ -222,6 +230,42 @@ export default function AlertView() {
                 {loading ? (
                     <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
                         <CircularProgress />
+                    </Box>
+                ) : isMobile ? (
+                    <Box>
+                        {alerts.length === 0 ? <Typography color="text.secondary">No active alerts found.</Typography> : <>
+                            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                                <Checkbox
+                                    checked={selectedAlerts.length === alerts.length}
+                                    indeterminate={selectedAlerts.length > 0 && selectedAlerts.length < alerts.length}
+                                    onChange={(e) => toggleSelectAll(e.target.checked)}
+                                    slotProps={{ input: { 'aria-label': 'Select all alerts' } }}
+                                />
+                                <Typography variant="body2">Select all alerts</Typography>
+                            </Box>
+                            {alerts.map(alert => (
+                                <Box component="article" key={alert.id} sx={{ p: 1.5, mb: 1.5, border: '2px solid', borderColor: 'divider', overflowWrap: 'anywhere' }}>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                        <Checkbox
+                                            checked={selectedAlerts.includes(alert.id)}
+                                            onChange={(e) => toggleSelect(alert.id, e.target.checked)}
+                                            slotProps={{ input: { 'aria-label': `Select alert ${alert.title || alert.user}` } }}
+                                        />
+                                        <Box>
+                                            <IconButton color="primary" aria-label="Edit alert" onClick={() => setEditingAlert({ ...alert })}>
+                                                <EditIcon />
+                                            </IconButton>
+                                            <IconButton color="error" aria-label="Delete alert" onClick={() => setDeleteDialog({ open: true, alertId: alert.id })}>
+                                                <DeleteIcon />
+                                            </IconButton>
+                                        </Box>
+                                    </Box>
+                                    <Typography variant="body2">Title Match: {alert.title || '-'}</Typography>
+                                    <Typography variant="body2">User Match: {alert.user || '-'}</Typography>
+                                    <Typography variant="body2" color="text.secondary">Webhook: {alert.webhook ? 'Custom' : 'Global'}</Typography>
+                                </Box>
+                            ))}
+                        </>}
                     </Box>
                 ) : (
                     <TableContainer>
