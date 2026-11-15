@@ -13,6 +13,23 @@ navigation moves onto a separate row. Check Dashboard, Marketplace (list and
 details), Search (list, details, and trends), Alerts, and their dialogs when
 changing these layouts. Local validation screenshots can be stored in `tmp/`.
 
+## eGun Softair
+
+The **eGun** navigation tab is also directly available at `/egun` (including
+refresh and browser back/forward navigation). It reads only `egun_marketplace`
+and `egun_price`; import `ASVZ_Crawler/pb_schema.json` before using it.
+The schema allows public reads and restricts writes to superusers. Listings support title
+and seller substring search, exact item IDs, EUR price bounds, auction/fixed
+price/buy-now selection, condition, seller type, active/inactive status,
+latest price or buy-now increases/decreases, and a changed-since time.
+Price bounds use the displayed price/current bid, excluding shipping. History
+shows auction/bid and buy-now observations separately. Inactive status means
+the listing was absent from a complete crawl, not that a sale was confirmed.
+
+Validate with `npm run build`, `npm run test`, and `npm run lint`. Check `/egun`
+at desktop and mobile widths, including no matches, failed requests, reset,
+pagination, and the price-history dialog.
+
 ## Docker
 
 The Dockerfile builds the frontend with Bun and serves the resulting static files

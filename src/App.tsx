@@ -25,10 +25,13 @@ import MarketplaceView from './components/MarketplaceView';
 import SearchView from './components/SearchView';
 import AlertView from './components/AlertView';
 import Login from './components/Login';
+import EgunView from './components/EgunView';
 // Marketplace Provider wraps the app to provide global state
 import { MarketplaceProvider } from './contexts/MarketplaceContext';
 import { AuthProvider } from './contexts/AuthContext';
 import { useAuth } from './contexts/AuthState';
+
+const tabPaths = ['/', '/marketplace', '/search', '/alerts', '/egun'];
 
 function MainApp() {
   const { isAuthenticated, logout } = useAuth();
@@ -39,15 +42,25 @@ function MainApp() {
   }), []);
 
   const [currentTab, setCurrentTab] = useState(() => {
+    const route = tabPaths.indexOf(window.location.pathname.replace(/\/$/, '') || '/');
+    if (route > 0) return route;
     const saved = localStorage.getItem('appCurrentTab');
-    return saved ? parseInt(saved, 10) : 0;
+    const parsed = saved ? parseInt(saved, 10) : 0;
+    return Number.isInteger(parsed) && parsed >= 0 && parsed < 4 ? parsed : 0;
   });
+
+  useEffect(() => {
+    const navigate = () => setCurrentTab(Math.max(0, tabPaths.indexOf(window.location.pathname.replace(/\/$/, '') || '/')));
+    window.addEventListener('popstate', navigate);
+    return () => window.removeEventListener('popstate', navigate);
+  }, []);
 
   useEffect(() => {
     localStorage.setItem('appCurrentTab', currentTab.toString());
   }, [currentTab]);
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
+    window.history.pushState(null, '', tabPaths[newValue]);
     setCurrentTab(newValue);
   };
 
@@ -117,6 +130,7 @@ function MainApp() {
             <Tab icon={<StoreIcon />} iconPosition="start" label="Marketplace" />
             <Tab icon={<SearchIcon />} iconPosition="start" label="Search" />
             <Tab icon={<NotificationsActiveIcon />} iconPosition="start" label="Alerts" />
+            <Tab icon={<StoreIcon />} iconPosition="start" label="eGun" />
           </Tabs>
 
           <Box sx={{ flexGrow: 0 }}>
@@ -153,6 +167,9 @@ function MainApp() {
 
       <Box component="main" sx={{ flexGrow: 1, minHeight: 0, overflow: 'auto', py: { xs: 2, sm: 3, lg: 4 }, pb: 'max(24px, env(safe-area-inset-bottom))', bgcolor: 'transparent' }}>
         <Container maxWidth={false} sx={{ width: { xs: '100%', lg: '90%' }, px: { xs: 1.5, sm: 3 } }}>
+          <div role="tabpanel" hidden={currentTab !== 4}>
+            {currentTab === 4 && <EgunView />}
+          </div>
           {/* Tab Panel 0: Dashboard */}
           <div role="tabpanel" hidden={currentTab !== 0}>
             {currentTab === 0 && (
